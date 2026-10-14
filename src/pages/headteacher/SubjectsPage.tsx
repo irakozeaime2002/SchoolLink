@@ -1,5 +1,6 @@
 import { BookOpen, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Modal from '../../components/ui/Modal'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
@@ -19,6 +20,7 @@ export default function SubjectsPage() {
   const [formError, setFormError] = useState('')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const navigate = useNavigate()
 
   async function load() {
     if (!user?.school_id) return
@@ -114,16 +116,16 @@ export default function SubjectsPage() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {subjects.map((s, i) => (
-                <tr key={s.id} className="hover:bg-gray-50">
+                <tr key={s.id} onClick={() => navigate(`/headteacher/subjects/${s.id}`)} className="hover:bg-gray-50 cursor-pointer">
                   <td className="px-5 py-3 text-gray-400">{i + 1}</td>
                   <td className="px-5 py-3 font-medium text-gray-800">{s.name}</td>
                   <td className="px-5 py-3 text-gray-500">{s.code ?? <span className="text-gray-300">—</span>}</td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
-                      <button onClick={() => openEdit(s)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                      <button onClick={(e) => { e.stopPropagation(); openEdit(s) }} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
                         <Pencil size={14} />
                       </button>
-                      <button onClick={() => setDeleteSubject(s)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                      <button onClick={(e) => { e.stopPropagation(); setDeleteSubject(s) }} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                         <Trash2 size={14} />
                       </button>
                     </div>

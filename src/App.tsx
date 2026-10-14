@@ -7,11 +7,13 @@ import RegisterPage from './pages/auth/RegisterPage'
 import WelcomePage from './pages/auth/WelcomePage'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AcademicYearsPage from './pages/headteacher/AcademicYearsPage'
+import ClassDetailPage from './pages/headteacher/ClassDetailPage'
 import ClassesPage from './pages/headteacher/ClassesPage'
 import HeadteacherDashboard from './pages/headteacher/HeadteacherDashboard'
 import StudentDetailPage from './pages/headteacher/StudentDetailPage'
 import StudentsPage from './pages/headteacher/StudentsPage'
 import SchoolSettingsPage from './pages/headteacher/SchoolSettingsPage'
+import SubjectDetailPage from './pages/headteacher/SubjectDetailPage'
 import SubjectsPage from './pages/headteacher/SubjectsPage'
 import TeachersPage from './pages/headteacher/TeachersPage'
 import ParentAttendancePage from './pages/parent/ParentAttendancePage'
@@ -49,11 +51,13 @@ export default function App() {
               <Route path="/headteacher/academic-years" element={<AcademicYearsPage />} />
               <Route path="/headteacher/teachers" element={<TeachersPage />} />
               <Route path="/headteacher/classes" element={<ClassesPage />} />
+              <Route path="/headteacher/classes/:id" element={<ClassDetailPage />} />
               <Route path="/headteacher/students" element={<StudentsPage />} />
               <Route path="/headteacher/students/:id" element={<StudentDetailPage />} />
               <Route path="/headteacher/announcements" element={<AnnouncementsPage />} />
               <Route path="/headteacher/messages" element={<MessagesPage />} />
               <Route path="/headteacher/subjects" element={<SubjectsPage />} />
+              <Route path="/headteacher/subjects/:id" element={<SubjectDetailPage />} />
               <Route path="/headteacher/settings" element={<SchoolSettingsPage />} />
             </Route>
           </Route>
