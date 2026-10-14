@@ -1,4 +1,4 @@
-import { Plus, Search } from 'lucide-react'
+import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Badge from '../../components/ui/Badge'
@@ -29,9 +29,13 @@ export default function StudentsPage() {
   const [search, setSearch] = useState('')
   const [classFilter, setClassFilter] = useState('All')
   const [open, setOpen] = useState(false)
+  const [editStudent, setEditStudent] = useState<Student | null>(null)
+  const [deleteStudent, setDeleteStudent] = useState<Student | null>(null)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   async function load() {
     if (!user?.school_id) return
@@ -60,46 +64,94 @@ export default function StudentsPage() {
     return matchSearch && matchClass
   })
 
-  async function handleAdd() {
+  function openAdd() {
+    setEditStudent(null)
+    setForm(emptyForm)
+    setFormError('')
+    setOpen(true)
+  }
+
+  function openEdit(s: Student, e: React.MouseEvent) {
+    e.stopPropagation()
+    setEditStudent(s)
+    setForm({
+      full_name: s.full_name,
+      class_id: s.class_id,
+      date_of_birth: s.date_of_birth ?? '',
+      status: s.status,
+      guardian_name: s.guardian_name ?? '',
+      guardian_phone: s.guardian_phone ?? '',
+    })
+    setFormError('')
+    setOpen(true)
+  }
+
+  async function handleSave() {
     if (!form.full_name.trim() || !form.class_id) {
       setFormError('Name and class are required.')
       return
     }
-    const { data: student, error } = await supabase.from('students').insert({
-      school_id: user!.school_id,
-      full_name: form.full_name.trim(),
-      class_id: form.class_id,
-      date_of_birth: form.date_of_birth || null,
-      status: form.status,
-      guardian_name: form.guardian_name.trim() || null,
-      guardian_phone: form.guardian_phone.trim() || null,
-    }).select('id').single()
-    if (error) { setFormError(error.message); return }
+    setSaving(true)
 
-    // Auto-create or link parent account if guardian phone provided
-    if (form.guardian_phone.trim() && student?.id) {
-      const { data: { session } } = await supabase.auth.getSession()
-      await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-parent`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify({
-            student_id: student.id,
-            guardian_name: form.guardian_name.trim() || null,
-            guardian_phone: form.guardian_phone.trim(),
-          }),
-        }
-      )
+    if (editStudent) {
+      // Edit
+      const { error } = await supabase.from('students').update({
+        full_name: form.full_name.trim(),
+        class_id: form.class_id,
+        date_of_birth: form.date_of_birth || null,
+        status: form.status,
+        guardian_name: form.guardian_name.trim() || null,
+        guardian_phone: form.guardian_phone.trim() || null,
+      }).eq('id', editStudent.id)
+      if (error) { setFormError(error.message); setSaving(false); return }
+    } else {
+      // Add
+      const { data: student, error } = await supabase.from('students').insert({
+        school_id: user!.school_id,
+        full_name: form.full_name.trim(),
+        class_id: form.class_id,
+        date_of_birth: form.date_of_birth || null,
+        status: form.status,
+        guardian_name: form.guardian_name.trim() || null,
+        guardian_phone: form.guardian_phone.trim() || null,
+      }).select('id').single()
+      if (error) { setFormError(error.message); setSaving(false); return }
+
+      // Auto-create or link parent — non-blocking
+      if (form.guardian_phone.trim() && student?.id) {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-parent`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session?.access_token}`,
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({
+              student_id: student.id,
+              guardian_name: form.guardian_name.trim() || null,
+              guardian_phone: form.guardian_phone.trim(),
+            }),
+          }).catch(() => {})
+        })
+      }
     }
 
+    setSaving(false)
+    setOpen(false)
+    setEditStudent(null)
     setForm(emptyForm)
     setFormError('')
-    setOpen(false)
+    load()
+  }
+
+  async function handleDelete() {
+    if (!deleteStudent) return
+    setDeleting(true)
+    await supabase.from('parent_students').delete().eq('student_id', deleteStudent.id)
+    await supabase.from('students').delete().eq('id', deleteStudent.id)
+    setDeleting(false)
+    setDeleteStudent(null)
     load()
   }
 
@@ -110,7 +162,7 @@ export default function StudentsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Students</h1>
           <p className="text-gray-500 text-sm mt-1">{students.length} students enrolled</p>
         </div>
-        <button onClick={() => setOpen(true)} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+        <button onClick={openAdd} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
           <Plus size={16} /> Add Student
         </button>
       </div>
@@ -137,13 +189,14 @@ export default function StudentsPage() {
               <th className="text-left px-5 py-3 text-gray-500 font-medium">Date of Birth</th>
               <th className="text-left px-5 py-3 text-gray-500 font-medium">Guardian</th>
               <th className="text-left px-5 py-3 text-gray-500 font-medium">Status</th>
+              <th className="text-left px-5 py-3 text-gray-500 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {loading
-              ? <tr><td colSpan={6} className="px-5 py-8 text-center text-gray-400">Loading…</td></tr>
+              ? <tr><td colSpan={7} className="px-5 py-8 text-center text-gray-400">Loading…</td></tr>
               : filtered.length === 0
-              ? <tr><td colSpan={6} className="px-5 py-8 text-center text-gray-400">No students found.</td></tr>
+              ? <tr><td colSpan={7} className="px-5 py-8 text-center text-gray-400">No students found.</td></tr>
               : filtered.map((s, i) => (
                 <tr key={s.id} onClick={() => navigate(`/headteacher/students/${s.id}`)} className="hover:bg-gray-50 cursor-pointer">
                   <td className="px-5 py-3 text-gray-400">{i + 1}</td>
@@ -159,6 +212,22 @@ export default function StudentsPage() {
                   <td className="px-5 py-3">
                     <Badge label={s.status} variant={s.status === 'active' ? 'green' : s.status === 'transferred' ? 'yellow' : 'gray'} />
                   </td>
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => openEdit(s, e)}
+                        className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteStudent(s) }}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))
             }
@@ -166,8 +235,9 @@ export default function StudentsPage() {
         </table>
       </div>
 
+      {/* Add / Edit Modal */}
       {open && (
-        <Modal title="Add Student" onClose={() => { setOpen(false); setFormError('') }}>
+        <Modal title={editStudent ? 'Edit Student' : 'Add Student'} onClose={() => { setOpen(false); setFormError('') }}>
           <div className="space-y-4">
             {formError && <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg">{formError}</div>}
             <div>
@@ -209,7 +279,26 @@ export default function StudentsPage() {
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => { setOpen(false); setFormError('') }} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
-              <button onClick={handleAdd} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors">Add Student</button>
+              <button onClick={handleSave} disabled={saving} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50">
+                {saving ? 'Saving…' : editStudent ? 'Save Changes' : 'Add Student'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteStudent && (
+        <Modal title="Delete Student" onClose={() => setDeleteStudent(null)}>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Are you sure you want to delete <span className="font-semibold text-gray-800">{deleteStudent.full_name}</span>? This will also remove all their marks and attendance records.
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setDeleteStudent(null)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
+              <button onClick={handleDelete} disabled={deleting} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50">
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
             </div>
           </div>
         </Modal>
