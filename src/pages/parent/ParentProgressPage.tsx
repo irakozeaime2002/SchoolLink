@@ -19,27 +19,40 @@ export default function ParentProgressPage() {
     async function load() {
       const { data: link } = await supabase
         .from('parent_students')
-        .select('student_id, students(full_name, classes(name))')
+        .select('student_id')
         .eq('parent_id', user!.id)
         .limit(1)
         .single()
 
       if (!link) { setLoading(false); return }
-      setChild(link.students)
 
-      const { data: marks } = await supabase
+      const { data: studentData } = await supabase
+        .from('students')
+        .select('full_name, classes(name)')
+        .eq('id', link.student_id)
+        .single()
+      setChild(studentData)
+
+      const { data: marksData } = await supabase
         .from('marks')
-        .select('score, assessments(title, max_score, subjects(name))')
+        .select('score, assessment_id')
         .eq('student_id', link.student_id)
 
-      if (marks && marks.length > 0) {
+      if (marksData && marksData.length > 0) {
+        const aIds = marksData.map((m: any) => m.assessment_id)
+        const { data: assessments } = await supabase
+          .from('assessments')
+          .select('id, title, max_score, subjects(name)')
+          .in('id', aIds)
+        const aMap = Object.fromEntries((assessments ?? []).map((a: any) => [a.id, a]))
         const bySubject: Record<string, { assessments: any[]; total: number; count: number }> = {}
-        marks.forEach((m: any) => {
-          const name = m.assessments?.subjects?.name
+        marksData.forEach((m: any) => {
+          const a = aMap[m.assessment_id]
+          const name = (a?.subjects as any)?.name
           if (!name) return
           if (!bySubject[name]) bySubject[name] = { assessments: [], total: 0, count: 0 }
-          const pct = Math.round((m.score / m.assessments.max_score) * 100)
-          bySubject[name].assessments.push({ title: m.assessments.title, score: m.score, max: m.assessments.max_score, pct })
+          const pct = Math.round((m.score / a.max_score) * 100)
+          bySubject[name].assessments.push({ title: a.title, score: m.score, max: a.max_score, pct })
           bySubject[name].total += pct
           bySubject[name].count += 1
         })

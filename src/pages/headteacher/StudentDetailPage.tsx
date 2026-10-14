@@ -19,25 +19,31 @@ export default function StudentDetailPage() {
   useEffect(() => {
     if (!id) return
     async function load() {
-      const { data: s } = await supabase
-        .from('students')
-        .select('*, classes(name), parent_students(profiles(full_name, phone))')
-        .eq('id', id)
-        .single()
-      setStudent(s)
+      const [{ data: s }, { data: parentLinks }] = await Promise.all([
+        supabase.from('students').select('*, classes(name)').eq('id', id).single(),
+        supabase.from('parent_students').select('profiles(full_name, phone)').eq('student_id', id),
+      ])
+      setStudent(s ? { ...s, parent_students: parentLinks ?? [] } : null)
 
       // Subject averages from marks
-      const { data: marks } = await supabase
+      const { data: studentMarks } = await supabase
         .from('marks')
-        .select('score, assessments(max_score, subjects(name))')
+        .select('score, assessment_id')
         .eq('student_id', id)
 
-      if (marks && marks.length > 0) {
+      if (studentMarks && studentMarks.length > 0) {
+        const assessmentIds = studentMarks.map((m: any) => m.assessment_id)
+        const { data: assessments } = await supabase
+          .from('assessments')
+          .select('id, max_score, subjects(name)')
+          .in('id', assessmentIds)
+        const aMap = Object.fromEntries((assessments ?? []).map((a: any) => [a.id, a]))
         const bySubject: Record<string, { total: number; count: number }> = {}
-        marks.forEach((m: any) => {
-          const name = m.assessments?.subjects?.name
+        studentMarks.forEach((m: any) => {
+          const a = aMap[m.assessment_id]
+          const name = (a?.subjects as any)?.name
           if (!name) return
-          const pct = (m.score / m.assessments.max_score) * 100
+          const pct = (m.score / a.max_score) * 100
           if (!bySubject[name]) bySubject[name] = { total: 0, count: 0 }
           bySubject[name].total += pct
           bySubject[name].count += 1

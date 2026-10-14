@@ -28,23 +28,33 @@ export default function HeadteacherDashboard() {
       ])
       setStats({ students: students ?? 0, teachers: teachers ?? 0, classes: classes ?? 0 })
 
-      // Subject averages
-      const { data: marks } = await supabase
-        .from('marks')
-        .select('score, assessment:assessments(max_score, subject:subjects(name))')
-        .eq('assessments.school_id', schoolId)
+      // Subject averages — fetch assessments for this school, then join marks
+      const { data: schoolAssessments } = await supabase
+        .from('assessments')
+        .select('id, max_score, subject:subjects(name)')
+        .eq('school_id', schoolId)
 
-      if (marks && marks.length > 0) {
-        const bySubject: Record<string, { total: number; count: number }> = {}
-        marks.forEach((m: any) => {
-          const name = m.assessment?.subject?.name
-          if (!name) return
-          const pct = (m.score / m.assessment.max_score) * 100
-          if (!bySubject[name]) bySubject[name] = { total: 0, count: 0 }
-          bySubject[name].total += pct
-          bySubject[name].count += 1
-        })
-        setSubjectData(Object.entries(bySubject).map(([subject, v]) => ({ subject, average: Math.round(v.total / v.count) })))
+      if (schoolAssessments && schoolAssessments.length > 0) {
+        const assessmentIds = schoolAssessments.map((a: any) => a.id)
+        const { data: marks } = await supabase
+          .from('marks')
+          .select('score, assessment_id')
+          .in('assessment_id', assessmentIds)
+
+        if (marks && marks.length > 0) {
+          const assessmentMap = Object.fromEntries(schoolAssessments.map((a: any) => [a.id, a]))
+          const bySubject: Record<string, { total: number; count: number }> = {}
+          marks.forEach((m: any) => {
+            const assessment = assessmentMap[m.assessment_id]
+            const name = (assessment?.subject as any)?.name
+            if (!name) return
+            const pct = (m.score / assessment.max_score) * 100
+            if (!bySubject[name]) bySubject[name] = { total: 0, count: 0 }
+            bySubject[name].total += pct
+            bySubject[name].count += 1
+          })
+          setSubjectData(Object.entries(bySubject).map(([subject, v]) => ({ subject, average: Math.round(v.total / v.count) })))
+        }
       }
 
       // Class averages
@@ -54,20 +64,34 @@ export default function HeadteacherDashboard() {
         .eq('school_id', schoolId)
 
       if (classRows && classRows.length > 0) {
-        const classAvgs: { class: string; average: number }[] = []
-        for (const cls of classRows) {
-          const { data: clsMarks } = await supabase
+        const classIds = classRows.map((c: any) => c.id)
+        const { data: classAssessments } = await supabase
+          .from('assessments')
+          .select('id, max_score, class_id')
+          .in('class_id', classIds)
+
+        if (classAssessments && classAssessments.length > 0) {
+          const caIds = classAssessments.map((a: any) => a.id)
+          const { data: allMarks } = await supabase
             .from('marks')
-            .select('score, assessment:assessments(max_score, class_id)')
-            .eq('assessments.class_id', cls.id)
-          if (clsMarks && clsMarks.length > 0) {
-            const valid = clsMarks.filter((m: any) => m.assessment?.max_score)
-            if (valid.length === 0) continue
-            const avg = valid.reduce((s: number, m: any) => s + (m.score / m.assessment.max_score) * 100, 0) / valid.length
-            classAvgs.push({ class: cls.name, average: Math.round(avg) })
+            .select('score, assessment_id')
+            .in('assessment_id', caIds)
+
+          const caMap = Object.fromEntries(classAssessments.map((a: any) => [a.id, a]))
+          const scoreMap: Record<string, { total: number; count: number }> = {}
+          for (const m of allMarks ?? []) {
+            const a = caMap[m.assessment_id]
+            if (!a) continue
+            if (!scoreMap[a.class_id]) scoreMap[a.class_id] = { total: 0, count: 0 }
+            scoreMap[a.class_id].total += (m.score / a.max_score) * 100
+            scoreMap[a.class_id].count += 1
           }
+          setClassData(
+            classRows
+              .filter((c: any) => scoreMap[c.id])
+              .map((c: any) => ({ class: c.name, average: Math.round(scoreMap[c.id].total / scoreMap[c.id].count) }))
+          )
         }
-        setClassData(classAvgs)
       }
 
       setLoading(false)

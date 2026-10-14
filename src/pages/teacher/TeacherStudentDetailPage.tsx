@@ -42,12 +42,22 @@ export default function TeacherStudentDetailPage() {
       const { data: s } = await supabase.from('students').select('*, classes(name)').eq('id', id).single()
       setStudent(s)
 
-      const { data: marks } = await supabase
-        .from('marks')
-        .select('score, assessments(title, max_score, type, subjects(name))')
-        .eq('student_id', id)
-        .eq('assessments.teacher_id', user?.id)
-      setAssessments(marks ?? [])
+      const { data: teacherAssessments } = await supabase
+        .from('assessments')
+        .select('id, title, max_score, type, subject_id, subjects(name)')
+        .eq('teacher_id', user?.id)
+
+      const assessmentIds = (teacherAssessments ?? []).map((a: any) => a.id)
+      const assessmentMap = Object.fromEntries((teacherAssessments ?? []).map((a: any) => [a.id, a]))
+
+      const { data: marksData } = assessmentIds.length
+        ? await supabase.from('marks').select('score, assessment_id').eq('student_id', id).in('assessment_id', assessmentIds)
+        : { data: [] }
+
+      setAssessments((marksData ?? []).map((m: any) => ({
+        score: m.score,
+        assessments: assessmentMap[m.assessment_id],
+      })))
 
       await loadInterventions()
       setLoading(false)

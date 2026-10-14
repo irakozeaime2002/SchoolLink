@@ -20,13 +20,19 @@ export default function ParentAttendancePage() {
     async function load() {
       const { data: link } = await supabase
         .from('parent_students')
-        .select('student_id, students(full_name, classes(name))')
+        .select('student_id')
         .eq('parent_id', user!.id)
         .limit(1)
         .single()
 
       if (!link) { setLoading(false); return }
-      setChild(link.students)
+
+      const { data: studentData } = await supabase
+        .from('students')
+        .select('full_name, classes(name)')
+        .eq('id', link.student_id)
+        .single()
+      setChild(studentData)
 
       const { data: att } = await supabase
         .from('attendance')

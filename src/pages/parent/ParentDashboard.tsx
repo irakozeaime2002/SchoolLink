@@ -1,6 +1,5 @@
 import { CalendarCheck, ChevronDown, KeyRound, MessageSquare, TrendingUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import Badge from '../../components/ui/Badge'
 import StatCard from '../../components/ui/StatCard'
 import { useAuth } from '../../context/AuthContext'
@@ -16,7 +15,6 @@ interface Child {
 
 export default function ParentDashboard() {
   const { user, mustChangePassword, setMustChangePassword } = useAuth()
-  const navigate = useNavigate()
   const [children, setChildren] = useState<Child[]>([])
   const [activeChild, setActiveChild] = useState<Child | null>(null)
   const [subjects, setSubjects] = useState<{ name: string; score: number }[]>([])
@@ -35,17 +33,25 @@ export default function ParentDashboard() {
   useEffect(() => {
     if (!user?.id) return
     async function loadChildren() {
-      const { data } = await supabase
+      const { data: links } = await supabase
         .from('parent_students')
-        .select('student_id, students(full_name, classes(name), schools(name, id))')
+        .select('student_id')
         .eq('parent_id', user!.id)
 
-      const list: Child[] = (data ?? []).map((r: any) => ({
-        student_id: r.student_id,
-        full_name: r.students?.full_name ?? '—',
-        class_name: r.students?.classes?.name ?? '—',
-        school_name: r.students?.schools?.name ?? '—',
-        school_id: r.students?.schools?.id ?? '',
+      const studentIds = (links ?? []).map((r: any) => r.student_id)
+      if (studentIds.length === 0) { setLoading(false); return }
+
+      const { data: studentRows } = await supabase
+        .from('students')
+        .select('id, full_name, class_id, school_id, classes(name), schools(name)')
+        .in('id', studentIds)
+
+      const list: Child[] = (studentRows ?? []).map((s: any) => ({
+        student_id: s.id,
+        full_name: s.full_name ?? '—',
+        class_name: (s.classes as any)?.name ?? '—',
+        school_name: (s.schools as any)?.name ?? '—',
+        school_id: s.school_id ?? '',
       }))
       setChildren(list)
       if (list.length > 0) setActiveChild(list[0])
@@ -60,17 +66,24 @@ export default function ParentDashboard() {
       setSubjects([])
       setAttendanceRate(null)
 
-      const { data: marks } = await supabase
+      const { data: marksData } = await supabase
         .from('marks')
-        .select('score, assessments(max_score, subjects(name))')
+        .select('score, assessment_id')
         .eq('student_id', activeChild!.student_id)
 
-      if (marks && marks.length > 0) {
+      if (marksData && marksData.length > 0) {
+        const aIds = marksData.map((m: any) => m.assessment_id)
+        const { data: assessments } = await supabase
+          .from('assessments')
+          .select('id, max_score, subjects(name)')
+          .in('id', aIds)
+        const aMap = Object.fromEntries((assessments ?? []).map((a: any) => [a.id, a]))
         const bySubject: Record<string, { total: number; count: number }> = {}
-        marks.forEach((m: any) => {
-          const name = m.assessments?.subjects?.name
+        marksData.forEach((m: any) => {
+          const a = aMap[m.assessment_id]
+          const name = (a?.subjects as any)?.name
           if (!name) return
-          const pct = (m.score / m.assessments.max_score) * 100
+          const pct = (m.score / a.max_score) * 100
           if (!bySubject[name]) bySubject[name] = { total: 0, count: 0 }
           bySubject[name].total += pct
           bySubject[name].count += 1

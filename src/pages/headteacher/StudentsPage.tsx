@@ -39,18 +39,20 @@ export default function StudentsPage() {
 
   async function load() {
     if (!user?.school_id) return
-    const { data } = await supabase
-      .from('students')
-      .select('id, full_name, class_id, date_of_birth, status, guardian_name, guardian_phone, classes(name)')
-      .eq('school_id', user.school_id)
-      .order('full_name')
-    setStudents((data ?? []).map((s: any) => ({ ...s, class_name: s.classes?.name ?? '—' })))
-
-    const { data: cls } = await supabase
-      .from('classes')
-      .select('id, name')
-      .eq('school_id', user.school_id)
-      .order('name')
+    const [{ data }, { data: cls }] = await Promise.all([
+      supabase
+        .from('students')
+        .select('id, full_name, class_id, date_of_birth, status, guardian_name, guardian_phone')
+        .eq('school_id', user.school_id)
+        .order('full_name'),
+      supabase
+        .from('classes')
+        .select('id, name')
+        .eq('school_id', user.school_id)
+        .order('name'),
+    ])
+    const classMap = Object.fromEntries((cls ?? []).map((c: any) => [c.id, c.name]))
+    setStudents((data ?? []).map((s: any) => ({ ...s, class_name: classMap[s.class_id] ?? '—' })))
     setClasses(cls ?? [])
     setLoading(false)
   }

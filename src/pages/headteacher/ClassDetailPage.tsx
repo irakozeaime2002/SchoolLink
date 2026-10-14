@@ -26,12 +26,17 @@ export default function ClassDetailPage() {
       // Class info
       const { data: classData } = await supabase
         .from('classes')
-        .select('id, name, profiles(full_name), students(id, full_name)')
+        .select('id, name, profiles(full_name)')
         .eq('id', id)
         .single()
       setCls(classData)
 
-      const studentList = classData?.students ?? []
+      const { data: studentRows } = await supabase
+        .from('students')
+        .select('id, full_name')
+        .eq('class_id', id)
+        .order('full_name')
+      const studentList = studentRows ?? []
       const studentIds = studentList.map((s: any) => s.id)
 
       // Marks for all students in class

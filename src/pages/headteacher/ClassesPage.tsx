@@ -51,9 +51,10 @@ export default function ClassesPage() {
     const { data: year } = await supabase.from('academic_years').select('id').eq('school_id', profile.school_id).eq('is_current', true).single()
     setAcademicYearId(year?.id ?? null)
 
-    const [{ data: classRows }, { data: teacherRows }] = await Promise.all([
-      supabase.from('classes').select('id, name, teacher_id, profiles(full_name), students(id)').eq('school_id', profile.school_id).order('name'),
+    const [{ data: classRows }, { data: teacherRows }, { data: studentCounts }] = await Promise.all([
+      supabase.from('classes').select('id, name, teacher_id, profiles(full_name)').eq('school_id', profile.school_id).order('name'),
       supabase.from('profiles').select('id, full_name').eq('school_id', profile.school_id).eq('role', 'teacher').order('full_name'),
+      supabase.from('students').select('id, class_id').eq('school_id', profile.school_id),
     ])
 
     if (classRows) {
@@ -75,7 +76,7 @@ export default function ClassesPage() {
         name: c.name,
         teacher_id: c.teacher_id,
         teacher_name: c.profiles?.full_name ?? null,
-        student_count: Array.isArray(c.students) ? c.students.length : 0,
+        student_count: (studentCounts ?? []).filter((s: any) => s.class_id === c.id).length,
         avg_score: scoreMap[c.id] ? Math.round(scoreMap[c.id].total / scoreMap[c.id].count) : null,
       })))
     }
