@@ -8,11 +8,14 @@ import {
   GraduationCap,
   LayoutDashboard,
   LogOut,
+  Menu,
   MessageSquare,
   School,
   Settings,
   Users,
+  X,
 } from 'lucide-react'
+import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import type { Role } from '../../types'
@@ -54,47 +57,62 @@ const navItems: Record<Role, { label: string; to: string; icon: React.ReactNode 
 
 export default function Sidebar() {
   const { user, signOut } = useAuth()
+  const [open, setOpen] = useState(false)
   if (!user) return null
 
   const items = navItems[user.role] ?? []
 
-  return (
+  const nav = (
     <aside className="flex flex-col w-60 min-h-screen bg-indigo-900 text-white">
-      <div className="flex items-center gap-2 px-6 py-5 border-b border-indigo-700">
-        <GraduationCap size={24} className="text-indigo-300" />
-        <span className="text-lg font-bold tracking-tight">SchoolLink</span>
+      <div className="flex items-center justify-between px-6 py-5 border-b border-indigo-700">
+        <div className="flex items-center gap-2">
+          <GraduationCap size={24} className="text-indigo-300" />
+          <span className="text-lg font-bold tracking-tight">SchoolLink</span>
+        </div>
+        <button onClick={() => setOpen(false)} className="sm:hidden text-indigo-300 hover:text-white">
+          <X size={20} />
+        </button>
       </div>
-
       <nav className="flex-1 px-3 py-4 space-y-1">
         {items.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end
+          <NavLink key={item.to} to={item.to} end onClick={() => setOpen(false)}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                isActive
-                  ? 'bg-indigo-700 text-white font-medium'
-                  : 'text-indigo-200 hover:bg-indigo-800 hover:text-white'
+                isActive ? 'bg-indigo-700 text-white font-medium' : 'text-indigo-200 hover:bg-indigo-800 hover:text-white'
               }`
-            }
-          >
-            {item.icon}
-            {item.label}
+            }>
+            {item.icon}{item.label}
           </NavLink>
         ))}
       </nav>
-
       <div className="px-3 py-4 border-t border-indigo-700">
         <div className="px-3 py-2 text-xs text-indigo-300 truncate">{user.full_name}</div>
-        <button
-          onClick={signOut}
-          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-indigo-200 hover:bg-indigo-800 hover:text-white transition-colors"
-        >
-          <LogOut size={18} />
-          Sign out
+        <button onClick={signOut}
+          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-indigo-200 hover:bg-indigo-800 hover:text-white transition-colors">
+          <LogOut size={18} /> Sign out
         </button>
       </div>
     </aside>
+  )
+
+  return (
+    <>
+      {/* Mobile hamburger */}
+      <button onClick={() => setOpen(true)}
+        className="sm:hidden fixed top-4 left-4 z-50 bg-indigo-600 text-white p-2 rounded-lg shadow-lg">
+        <Menu size={20} />
+      </button>
+
+      {/* Mobile overlay */}
+      {open && (
+        <div className="sm:hidden fixed inset-0 z-40 flex">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setOpen(false)} />
+          <div className="relative z-50">{nav}</div>
+        </div>
+      )}
+
+      {/* Desktop sidebar */}
+      <div className="hidden sm:flex">{nav}</div>
+    </>
   )
 }
