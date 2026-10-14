@@ -9,6 +9,7 @@ import {
   LogOut,
   MessageSquare,
   School,
+  Settings,
   Users,
 } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
@@ -28,6 +29,7 @@ const navItems: Record<Role, { label: string; to: string; icon: React.ReactNode 
     { label: 'Students', to: '/headteacher/students', icon: <GraduationCap size={18} /> },
     { label: 'Messages', to: '/headteacher/messages', icon: <MessageSquare size={18} /> },
     { label: 'Announcements', to: '/headteacher/announcements', icon: <Bell size={18} /> },
+    { label: 'Settings', to: '/headteacher/settings', icon: <Settings size={18} /> },
   ],
 
   teacher: [

@@ -7,6 +7,7 @@ export interface User {
   role: Role
   school_id: string | null
   avatar_url?: string
+  must_change_password?: boolean
 }
 
 export interface School {

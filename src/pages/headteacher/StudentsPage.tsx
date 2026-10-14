@@ -65,7 +65,7 @@ export default function StudentsPage() {
       setFormError('Name and class are required.')
       return
     }
-    const { error } = await supabase.from('students').insert({
+    const { data: student, error } = await supabase.from('students').insert({
       school_id: user!.school_id,
       full_name: form.full_name.trim(),
       class_id: form.class_id,
@@ -73,8 +73,30 @@ export default function StudentsPage() {
       status: form.status,
       guardian_name: form.guardian_name.trim() || null,
       guardian_phone: form.guardian_phone.trim() || null,
-    })
+    }).select('id').single()
     if (error) { setFormError(error.message); return }
+
+    // Auto-create or link parent account if guardian phone provided
+    if (form.guardian_phone.trim() && student?.id) {
+      const { data: { session } } = await supabase.auth.getSession()
+      await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-parent`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            student_id: student.id,
+            guardian_name: form.guardian_name.trim() || null,
+            guardian_phone: form.guardian_phone.trim(),
+          }),
+        }
+      )
+    }
+
     setForm(emptyForm)
     setFormError('')
     setOpen(false)

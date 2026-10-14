@@ -9,6 +9,8 @@ interface AuthContextType {
   user: User | null
   loading: boolean
   loginError: string
+  mustChangePassword: boolean
+  setMustChangePassword: (v: boolean) => void
   signOut: () => Promise<void>
 }
 
@@ -17,6 +19,8 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   loginError: '',
+  mustChangePassword: false,
+  setMustChangePassword: () => {},
   signOut: async () => {},
 })
 
@@ -25,6 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [loginError, setLoginError] = useState('')
+  const [mustChangePassword, setMustChangePassword] = useState(false)
   const navigate = useNavigate()
 
   async function fetchProfile(userId: string) {
@@ -50,6 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setLoginError('')
     setUser(data)
+    setMustChangePassword(data.must_change_password ?? false)
     setLoading(false)
 
     // Navigate to the correct dashboard based on role
@@ -88,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, loginError, signOut }}>
+    <AuthContext.Provider value={{ session, user, loading, loginError, mustChangePassword, setMustChangePassword, signOut }}>
       {children}
     </AuthContext.Provider>
   )

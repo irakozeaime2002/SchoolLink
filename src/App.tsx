@@ -11,6 +11,7 @@ import ClassesPage from './pages/headteacher/ClassesPage'
 import HeadteacherDashboard from './pages/headteacher/HeadteacherDashboard'
 import StudentDetailPage from './pages/headteacher/StudentDetailPage'
 import StudentsPage from './pages/headteacher/StudentsPage'
+import SchoolSettingsPage from './pages/headteacher/SchoolSettingsPage'
 import TeachersPage from './pages/headteacher/TeachersPage'
 import ParentAttendancePage from './pages/parent/ParentAttendancePage'
 import ParentDashboard from './pages/parent/ParentDashboard'
@@ -51,6 +52,7 @@ export default function App() {
               <Route path="/headteacher/students/:id" element={<StudentDetailPage />} />
               <Route path="/headteacher/announcements" element={<AnnouncementsPage />} />
               <Route path="/headteacher/messages" element={<MessagesPage />} />
+              <Route path="/headteacher/settings" element={<SchoolSettingsPage />} />
             </Route>
           </Route>
 
