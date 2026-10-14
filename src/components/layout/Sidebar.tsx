@@ -1,6 +1,7 @@
 import {
   Bell,
   BookOpen,
+  BookText,
   CalendarCheck,
   CalendarDays,
   ClipboardList,
@@ -26,6 +27,7 @@ const navItems: Record<Role, { label: string; to: string; icon: React.ReactNode 
     { label: 'Academic Years', to: '/headteacher/academic-years', icon: <CalendarDays size={18} /> },
     { label: 'Teachers', to: '/headteacher/teachers', icon: <Users size={18} /> },
     { label: 'Classes', to: '/headteacher/classes', icon: <BookOpen size={18} /> },
+    { label: 'Subjects', to: '/headteacher/subjects', icon: <BookText size={18} /> },
     { label: 'Students', to: '/headteacher/students', icon: <GraduationCap size={18} /> },
     { label: 'Messages', to: '/headteacher/messages', icon: <MessageSquare size={18} /> },
     { label: 'Announcements', to: '/headteacher/announcements', icon: <Bell size={18} /> },
