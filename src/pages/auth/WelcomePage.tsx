@@ -75,7 +75,6 @@ const roles = [
 ]
 
 const stats = [
-  { value: '4', label: 'User Roles' },
   { value: 'SMS', label: 'Parent Alerts' },
   { value: '100%', label: 'Rwanda-focused' },
   { value: 'RLS', label: 'Secure by Default' },
@@ -142,7 +141,7 @@ export default function WelcomePage() {
 
       {/* Stats */}
       <section className="bg-indigo-700 text-white px-6 sm:px-10 py-8">
-        <div className="max-w-4xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
+        <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
           {stats.map((s) => (
             <div key={s.label}>
               <p className="text-3xl font-extrabold">{s.value}</p>
