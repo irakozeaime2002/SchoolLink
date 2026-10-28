@@ -1,23 +1,26 @@
-import { BookOpen, CalendarCheck, FileText, TrendingUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 
 export default function ParentReportPage() {
   const { user } = useAuth()
+  const userId = user?.id
   const [student, setStudent] = useState<any>(null)
   const [subjectData, setSubjectData] = useState<{ name: string; average: number }[]>([])
   const [attendance, setAttendance] = useState({ present: 0, absent: 0, late: 0, excused: 0, total: 0 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!user?.id) return
+    if (!userId) {
+      setLoading(false)
+      return
+    }
 
     async function load() {
       const { data: link } = await supabase
         .from('parent_students')
         .select('student_id')
-        .eq('parent_id', user.id)
+        .eq('parent_id', userId)
         .limit(1)
         .single()
 
@@ -63,7 +66,7 @@ export default function ParentReportPage() {
           Object.entries(bySubject).map(([name, value]) => ({
             name,
             average: Math.round(value.total / value.count),
-          }))
+          })),
         )
       }
 
@@ -84,7 +87,7 @@ export default function ParentReportPage() {
     }
 
     load()
-  }, [user])
+  }, [userId])
 
   const overallAverage = subjectData.length > 0
     ? Math.round(subjectData.reduce((total, item) => total + item.average, 0) / subjectData.length)
