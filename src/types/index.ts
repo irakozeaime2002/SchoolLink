@@ -1,5 +1,8 @@
 export type Role = 'platform_admin' | 'headteacher' | 'teacher' | 'parent'
 
+export type ConcernCategory = 'academic' | 'attendance' | 'behavior' | 'meeting' | 'general'
+export type ConcernStatus = 'open' | 'assigned' | 'in_review' | 'resolved'
+
 export interface User {
   id: string
   email: string
@@ -120,4 +123,29 @@ export interface Message {
   body: string
   read: boolean
   created_at: string
+}
+
+export interface ConcernComment {
+  id: string
+  author: string
+  text: string
+  created_at: string
+}
+
+export interface Concern {
+  id: string
+  school_id: string
+  parent_id: string
+  student_id: string
+  student_name: string
+  category: ConcernCategory
+  priority: 'low' | 'medium' | 'high'
+  title: string
+  description: string
+  status: ConcernStatus
+  assigned_to?: string
+  created_at: string
+  updated_at: string
+  resolved_at?: string
+  comments: ConcernComment[]
 }
