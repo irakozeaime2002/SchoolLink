@@ -1,4 +1,4 @@
-import { BookOpen, CalendarClock, CheckCircle, Plus, TrendingUp } from 'lucide-react'
+import { BookOpen, CalendarClock, CheckCircle, TrendingUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
@@ -29,18 +29,22 @@ const statusLabels: Record<Intervention['status'], string> = {
 
 export default function ParentInterventionPage() {
   const { user } = useAuth()
+  const userId = user?.id
   const [child, setChild] = useState<any>(null)
   const [interventions, setInterventions] = useState<Intervention[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!user?.id) return
+    if (!userId) {
+      setLoading(false)
+      return
+    }
 
     async function load() {
       const { data: link } = await supabase
         .from('parent_students')
         .select('student_id')
-        .eq('parent_id', user.id)
+        .eq('parent_id', userId)
         .limit(1)
         .single()
 
@@ -67,7 +71,7 @@ export default function ParentInterventionPage() {
     }
 
     load()
-  }, [user])
+  }, [userId])
 
   if (loading) return <div className="text-center py-20 text-gray-400">Loading…</div>
 
