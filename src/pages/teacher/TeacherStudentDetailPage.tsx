@@ -59,7 +59,12 @@ export default function TeacherStudentDetailPage() {
   }
 
   useEffect(() => {
-    if (!id || !user?.id) return
+    const teacherId = user?.id
+
+    if (!id || !teacherId) {
+      setLoading(false)
+      return
+    }
 
     async function load() {
       const { data: s } = await supabase
@@ -73,7 +78,7 @@ export default function TeacherStudentDetailPage() {
       const { data: teacherAssessments } = await supabase
         .from('assessments')
         .select('id, title, max_score, type, subject_id, subjects(name)')
-        .eq('teacher_id', user.id)
+        .eq('teacher_id', teacherId)
 
       const assessmentIds = (teacherAssessments ?? []).map((a: any) => a.id)
       const assessmentMap = Object.fromEntries((teacherAssessments ?? []).map((a: any) => [a.id, a]))
@@ -101,12 +106,12 @@ export default function TeacherStudentDetailPage() {
   }, [id, user?.id])
 
   async function handleAdd() {
-    if (!form.problem.trim() || !form.action.trim()) return
+    if (!user || !id || !form.problem.trim() || !form.action.trim()) return
 
     await supabase.from('interventions').insert({
-      school_id: user!.school_id,
+      school_id: user.school_id,
       student_id: id,
-      teacher_id: user!.id,
+      teacher_id: user.id,
       problem: form.problem,
       action: form.action,
       responsible: form.responsible,

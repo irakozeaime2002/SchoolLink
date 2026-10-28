@@ -1,4 +1,3 @@
-import { BookOpen, FileText, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
@@ -9,13 +8,18 @@ export default function TeacherReportsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!user?.id) return
+    const teacherId = user?.id
+
+    if (!teacherId) {
+      setLoading(false)
+      return
+    }
 
     async function load() {
       const { data: classes } = await supabase
         .from('classes')
         .select('id')
-        .eq('teacher_id', user.id)
+        .eq('teacher_id', teacherId)
 
       const classIds = (classes ?? []).map((item: any) => item.id)
       if (classIds.length === 0) {
@@ -71,7 +75,7 @@ export default function TeacherReportsPage() {
     }
 
     load()
-  }, [user])
+  }, [user?.id])
 
   if (loading) return <div className="text-center py-20 text-gray-400">Loading…</div>
 
@@ -105,13 +109,19 @@ export default function TeacherReportsPage() {
                   <td className="px-5 py-3 font-medium text-gray-800">{student.full_name}</td>
                   <td className="px-5 py-3 text-gray-500">{student.classes?.name ?? '—'}</td>
                   <td className="px-5 py-3">
-                    <span className="font-semibold text-gray-800">{student.average !== null ? `${student.average}%` : '—'}</span>
+                    <span className="font-semibold text-gray-800">
+                      {student.average !== null ? `${student.average}%` : '—'}
+                    </span>
                   </td>
                   <td className="px-5 py-3">
                     {student.needsSupport ? (
-                      <span className="inline-flex px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-medium">Needs support</span>
+                      <span className="inline-flex px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-medium">
+                        Needs support
+                      </span>
                     ) : (
-                      <span className="inline-flex px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">On track</span>
+                      <span className="inline-flex px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">
+                        On track
+                      </span>
                     )}
                   </td>
                 </tr>
