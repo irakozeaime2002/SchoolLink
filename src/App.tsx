@@ -19,7 +19,9 @@ import TeachersPage from './pages/headteacher/TeachersPage'
 import ParentAttendancePage from './pages/parent/ParentAttendancePage'
 import ParentDashboard from './pages/parent/ParentDashboard'
 import ParentHomeworkPage from './pages/parent/HomeworkPage'
+import ParentInterventionPage from './pages/parent/InterventionPage'
 import ParentProgressPage from './pages/parent/ParentProgressPage'
+import ParentReportPage from './pages/parent/ReportPage'
 import AnnouncementsPage from './pages/shared/AnnouncementsPage'
 import MessagesPage from './pages/shared/MessagesPage'
 import AttendancePage from './pages/teacher/AttendancePage'
@@ -27,6 +29,7 @@ import MarksPage from './pages/teacher/MarksPage'
 import TeacherClassesPage from './pages/teacher/TeacherClassesPage'
 import TeacherDashboard from './pages/teacher/TeacherDashboard'
 import TeacherHomeworkPage from './pages/teacher/HomeworkPage'
+import TeacherReportsPage from './pages/teacher/ReportsPage'
 import TeacherStudentDetailPage from './pages/teacher/TeacherStudentDetailPage'
 import TeacherStudentsPage from './pages/teacher/TeacherStudentsPage'
 
@@ -76,6 +79,7 @@ export default function App() {
               <Route path="/teacher/messages" element={<MessagesPage />} />
               <Route path="/teacher/announcements" element={<AnnouncementsPage />} />
               <Route path="/teacher/homework" element={<TeacherHomeworkPage />} />
+              <Route path="/teacher/reports" element={<TeacherReportsPage />} />
             </Route>
           </Route>
 
@@ -85,9 +89,11 @@ export default function App() {
               <Route path="/parent" element={<ParentDashboard />} />
               <Route path="/parent/progress" element={<ParentProgressPage />} />
               <Route path="/parent/attendance" element={<ParentAttendancePage />} />
+              <Route path="/parent/homework" element={<ParentHomeworkPage />} />
+              <Route path="/parent/support" element={<ParentInterventionPage />} />
+              <Route path="/parent/report" element={<ParentReportPage />} />
               <Route path="/parent/messages" element={<MessagesPage />} />
               <Route path="/parent/announcements" element={<AnnouncementsPage />} />
-              <Route path="/parent/homework" element={<ParentHomeworkPage />} />
             </Route>
           </Route>
 

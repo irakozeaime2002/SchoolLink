@@ -5,6 +5,7 @@ import {
   CalendarCheck,
   CalendarDays,
   ClipboardList,
+  FileText,
   GraduationCap,
   LayoutDashboard,
   LogOut,
@@ -12,6 +13,7 @@ import {
   MessageSquare,
   School,
   Settings,
+  TrendingUp,
   Users,
   X,
 } from 'lucide-react'
@@ -44,6 +46,7 @@ const navItems: Record<Role, { label: string; to: string; icon: React.ReactNode 
     { label: 'Marks', to: '/teacher/marks', icon: <ClipboardList size={18} /> },
     { label: 'Attendance', to: '/teacher/attendance', icon: <CalendarCheck size={18} /> },
     { label: 'Homework', to: '/teacher/homework', icon: <BookText size={18} /> },
+    { label: 'Reports', to: '/teacher/reports', icon: <FileText size={18} /> },
     { label: 'Messages', to: '/teacher/messages', icon: <MessageSquare size={18} /> },
     { label: 'Announcements', to: '/teacher/announcements', icon: <Bell size={18} /> },
   ],
@@ -52,6 +55,8 @@ const navItems: Record<Role, { label: string; to: string; icon: React.ReactNode 
     { label: 'Progress', to: '/parent/progress', icon: <ClipboardList size={18} /> },
     { label: 'Attendance', to: '/parent/attendance', icon: <CalendarCheck size={18} /> },
     { label: 'Homework', to: '/parent/homework', icon: <BookText size={18} /> },
+    { label: 'Support', to: '/parent/support', icon: <TrendingUp size={18} /> },
+    { label: 'Report', to: '/parent/report', icon: <FileText size={18} /> },
     { label: 'Messages', to: '/parent/messages', icon: <MessageSquare size={18} /> },
     { label: 'Announcements', to: '/parent/announcements', icon: <Bell size={18} /> },
   ],
@@ -99,13 +104,11 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile hamburger */}
       <button onClick={() => setOpen(true)}
         className="sm:hidden fixed top-4 left-4 z-50 bg-indigo-600 text-white p-2 rounded-lg shadow-lg">
         <Menu size={20} />
       </button>
 
-      {/* Mobile overlay */}
       {open && (
         <div className="sm:hidden fixed inset-0 z-40 flex">
           <div className="fixed inset-0 bg-black/50" onClick={() => setOpen(false)} />
@@ -113,7 +116,6 @@ export default function Sidebar() {
         </div>
       )}
 
-      {/* Desktop sidebar */}
       <div className="hidden sm:flex">{nav}</div>
     </>
   )
