@@ -18,6 +18,7 @@ import SubjectsPage from './pages/headteacher/SubjectsPage'
 import TeachersPage from './pages/headteacher/TeachersPage'
 import ParentAttendancePage from './pages/parent/ParentAttendancePage'
 import ParentDashboard from './pages/parent/ParentDashboard'
+import ParentHomeworkPage from './pages/parent/HomeworkPage'
 import ParentProgressPage from './pages/parent/ParentProgressPage'
 import AnnouncementsPage from './pages/shared/AnnouncementsPage'
 import MessagesPage from './pages/shared/MessagesPage'
@@ -25,6 +26,7 @@ import AttendancePage from './pages/teacher/AttendancePage'
 import MarksPage from './pages/teacher/MarksPage'
 import TeacherClassesPage from './pages/teacher/TeacherClassesPage'
 import TeacherDashboard from './pages/teacher/TeacherDashboard'
+import TeacherHomeworkPage from './pages/teacher/HomeworkPage'
 import TeacherStudentDetailPage from './pages/teacher/TeacherStudentDetailPage'
 import TeacherStudentsPage from './pages/teacher/TeacherStudentsPage'
 
@@ -73,6 +75,7 @@ export default function App() {
               <Route path="/teacher/students/:id" element={<TeacherStudentDetailPage />} />
               <Route path="/teacher/messages" element={<MessagesPage />} />
               <Route path="/teacher/announcements" element={<AnnouncementsPage />} />
+              <Route path="/teacher/homework" element={<TeacherHomeworkPage />} />
             </Route>
           </Route>
 
@@ -84,6 +87,7 @@ export default function App() {
               <Route path="/parent/attendance" element={<ParentAttendancePage />} />
               <Route path="/parent/messages" element={<MessagesPage />} />
               <Route path="/parent/announcements" element={<AnnouncementsPage />} />
+              <Route path="/parent/homework" element={<ParentHomeworkPage />} />
             </Route>
           </Route>
 
