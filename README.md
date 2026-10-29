@@ -1,3 +1,9 @@
+# SchoolLink
+
+SchoolLink is a school–parent platform built to help schools and families stay connected around every learner’s progress. It gives headteachers, teachers, and parents a simple way to track student performance, attendance, interventions, announcements, and communication in one place.
+
+The platform is designed for schools in Rwanda and follows a multi-tenant model, where each school remains isolated while using the same shared system.
+
 ## Problem specification
 
 Review of the education reports and statistical data in this project provides context about Rwanda’s education sector and the learners schools serve. However, national-level statistics do not by themselves show how individual schools communicate with families or manage each learner’s progress.
@@ -8,12 +14,36 @@ SchoolLink addresses this need with a shared platform for headteachers, teachers
 
 The intended outcome is better-informed families, more coordinated learner support, and clearer school-level oversight. The platform is designed to support these goals; its impact should be assessed through use in schools rather than assumed from national statistics alone.
 
+## Data, dashboards, and user interaction
 
-# SchoolLink
+### Data used by the application
 
-SchoolLink is a school–parent platform built to help schools and families stay connected around every learner’s progress. It gives headteachers, teachers, and parents a simple way to track student performance, attendance, interventions, announcements, and communication in one place.
+SchoolLink uses Supabase for authentication and to store the records displayed in the application. These records include schools, user profiles and roles, academic years, classes, subjects, students, assessments, marks, attendance, announcements, messages, and interventions.
 
-The platform is designed for schools in Rwanda and follows a multi-tenant model, where each school remains isolated while using the same shared system.
+The Excel workbooks in the `data/` folder provide education-sector reference material. The application does not currently import those workbooks to populate its dashboards. Dashboard information comes from the school records stored in Supabase. During development, the project’s seed script can also create sample records for testing.
+
+### What the dashboards communicate
+
+The information shown depends on the signed-in user’s role:
+
+- **Platform administrators** see the schools registered on SchoolLink and the total number of users.
+- **Headteachers** see school-level counts for students, teachers, and classes, along with class and subject assessment averages and pending teacher requests.
+- **Teachers** see summaries for their assigned classes, including student counts, assessments, and recorded attendance.
+- **Parents and guardians** can view information for their linked children, including assessment results, attendance, announcements, and messages.
+
+These dashboards are intended to help users review school activity and learner progress. They present records entered into the system; they should not be treated as independent research findings or as a guarantee of academic outcomes.
+
+### How users interact with SchoolLink
+
+Users sign in and access pages appropriate to their assigned role. Headteachers manage school information and review school-level summaries. Teachers work with their classes and record academic and attendance information. Parents select a linked child to review available progress and attendance information and use the communication pages to stay informed.
+
+The information available to each user depends on the records entered for their school and account. Empty dashboards may mean that data has not yet been added or linked.
+
+### Problem addressed and proposed solution
+
+Schools need practical ways to organize learner records and follow academic progress, attendance, and support needs over time. When this information is difficult to review or share, teachers, school leaders, and families may have less visibility into a learner’s progress and may find it harder to coordinate support.
+
+SchoolLink brings student records, assessments, marks, attendance, interventions, announcements, and messages together in one platform. Its goal is to help school staff monitor learner progress and make relevant information more accessible to families throughout the school year. The platform is designed to support these goals; its impact should be evaluated through real use in schools.
 
 ## Project vision
 
