@@ -1,8 +1,8 @@
 # SchoolLink
 
-SchoolLink is a school–parent platform built to help schools and families stay connected around every learner’s progress. It gives headteachers, teachers, and parents a simple way to track student performance, attendance, interventions, announcements, and communication in one place.
+SchoolLink is designed to support the Government of Rwanda’s priorities for education, human-capital development, and digital transformation, as expressed in the *National Strategy for Transformation (NST2), 2024–2029*, and *Rwanda Vision 2050*. By bringing learner records, assessment results, attendance, and school–family communication together in a digital platform, SchoolLink can help schools monitor progress and coordinate learner support. This describes the project’s intended alignment with national priorities; it is not a claim of official endorsement or proven impact.
 
-The platform is designed for schools in Rwanda and follows a multi-tenant model, where each school remains isolated while using the same shared system.
+**References:** Government of Rwanda, *National Strategy for Transformation (NST2), 2024–2029*; Government of Rwanda, *Rwanda Vision 2050*.
 
 ## Problem specification
 
