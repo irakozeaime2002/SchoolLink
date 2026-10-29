@@ -1,18 +1,18 @@
 # SchoolLink
 
+SchoolLink is a digital platform that helps schools and families follow learners’ academic progress and stay connected. Headteachers, teachers, and parents can access relevant student information, assessments, attendance, support activities, announcements, and messages in one place. The platform is designed for schools in Rwanda, with each school’s information kept within its own school context.
+
 SchoolLink is designed to support the Government of Rwanda’s priorities for education, human-capital development, and digital transformation, as expressed in the *National Strategy for Transformation (NST2), 2024–2029*, and *Rwanda Vision 2050*. By bringing learner records, assessment results, attendance, and school–family communication together in a digital platform, SchoolLink can help schools monitor progress and coordinate learner support. This describes the project’s intended alignment with national priorities; it is not a claim of official endorsement or proven impact.
 
 **References:** Government of Rwanda, *National Strategy for Transformation (NST2), 2024–2029*; Government of Rwanda, *Rwanda Vision 2050*.
 
 ## Problem specification
 
-Review of the education reports and statistical data in this project provides context about Rwanda’s education sector and the learners schools serve. However, national-level statistics do not by themselves show how individual schools communicate with families or manage each learner’s progress.
+Schools need reliable ways to organize learner information and follow academic progress, attendance, and support needs over time. When these records are difficult to review or share, teachers and school leaders may have less visibility into learner progress, and families may find it harder to stay informed and coordinate with the school.
 
-At the school level, staff need practical ways to keep student records, attendance, assessment results, and support actions organized and accessible. When this information is difficult to follow over time or share with families, parents may have limited visibility into a child’s progress, teachers may find it harder to coordinate support, and school leaders may lack a clear overview for decision-making.
+The education reports and statistical yearbook in the `data/` folder provide national-level context about Rwanda’s education sector. They do not, on their own, establish how individual schools manage records or communicate with families. SchoolLink addresses that school-level need by bringing student information, marks, attendance, interventions, announcements, and messages together in one platform.
 
-SchoolLink addresses this need with a shared platform for headteachers, teachers, and parents. It brings student information, marks, attendance, interventions, announcements, and messages together, helping schools monitor progress and communicate with families throughout the school year.
-
-The intended outcome is better-informed families, more coordinated learner support, and clearer school-level oversight. The platform is designed to support these goals; its impact should be assessed through use in schools rather than assumed from national statistics alone.
+The intended outcome is to make relevant information easier for school staff and families to access and to support more coordinated learner support. These are project goals; the platform’s impact should be assessed through its use in schools.
 
 ## Data, dashboards, and user interaction
 
@@ -39,23 +39,17 @@ Users sign in and access pages appropriate to their assigned role. Headteachers 
 
 The information available to each user depends on the records entered for their school and account. Empty dashboards may mean that data has not yet been added or linked.
 
-### Problem addressed and proposed solution
-
-Schools need practical ways to organize learner records and follow academic progress, attendance, and support needs over time. When this information is difficult to review or share, teachers, school leaders, and families may have less visibility into a learner’s progress and may find it harder to coordinate support.
-
-SchoolLink brings student records, assessments, marks, attendance, interventions, announcements, and messages together in one platform. Its goal is to help school staff monitor learner progress and make relevant information more accessible to families throughout the school year. The platform is designed to support these goals; its impact should be evaluated through real use in schools.
-
 ## Project vision
 
-In many schools, parents receive information only at the end of a term, while teachers often detect learning issues too late and headteachers still rely on manual reporting. SchoolLink changes that by making performance, attendance, support needs, and communication visible throughout the academic year.
+SchoolLink aims to help schools and families work together throughout the academic year, rather than relying only on occasional or end-of-term updates.
 
-The main goals are to:
+The project’s goals are to:
 
-- help every child succeed by improving school–home communication
-- replace paper-based reporting with a digital system
-- identify struggling learners early and support them before problems grow
-- give headteachers a clear picture of school performance
-- keep parents informed in real time without waiting for end-of-term results
+- make learner progress and attendance easier to follow
+- support timely communication between schools and families
+- help teachers and school leaders coordinate support for learners
+- give school leaders a clearer view of school activity
+- provide a digital foundation for managing school information
 
 ## Who it is for
 
