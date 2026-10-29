@@ -1,6 +1,8 @@
 import { Settings } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import TermDatesFields from '../../components/settings/TermDatesFields'
 import { useAuth } from '../../context/AuthContext'
+import { useTermDates } from '../../hooks/useTermDates'
 import { supabase } from '../../lib/supabase'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -16,7 +18,6 @@ interface Settings {
   late_threshold: string
   sms_notifications: boolean
   teachers_can_message_parents: boolean
-  parents_can_see_marks: boolean
   parents_can_see_attendance: boolean
 }
 
@@ -32,7 +33,6 @@ const defaults: Settings = {
   late_threshold: '08:00',
   sms_notifications: false,
   teachers_can_message_parents: true,
-  parents_can_see_marks: true,
   parents_can_see_attendance: true,
 }
 
@@ -43,6 +43,9 @@ export default function SchoolSettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState('')
+  const termDates = useTermDates(user?.school_id)
+  const [termErrors, setTermErrors] = useState<Record<number, string>>({})
 
   useEffect(() => {
     if (!user?.school_id) return
@@ -62,7 +65,6 @@ export default function SchoolSettingsPage() {
           late_threshold: settings.late_threshold,
           sms_notifications: settings.sms_notifications,
           teachers_can_message_parents: settings.teachers_can_message_parents,
-          parents_can_see_marks: settings.parents_can_see_marks,
           parents_can_see_attendance: settings.parents_can_see_attendance,
         })
       }
@@ -89,15 +91,27 @@ export default function SchoolSettingsPage() {
 
   async function handleSave() {
     if (!user?.school_id) return
+    setSaveError('')
+    const nextTermErrors = termDates.validate()
+    setTermErrors(nextTermErrors)
+    if (Object.keys(nextTermErrors).length > 0) {
+      setSaveError('Fix the term dates before saving.')
+      return
+    }
     setSaving(true)
     const payload = { ...form, school_id: user.school_id, updated_at: new Date().toISOString() }
-    await supabase.from('school_settings').upsert(payload, { onConflict: 'school_id' })
+    const { error } = await supabase.from('school_settings').upsert(payload, { onConflict: 'school_id' })
+    const termError = error ? null : await termDates.save()
     setSaving(false)
+    if (error || termError) {
+      setSaveError(error?.message ?? termError ?? 'Could not save settings.')
+      return
+    }
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
 
-  if (loading) return <p className="text-sm text-gray-400">Loading…</p>
+  if (loading || termDates.loading) return <p className="text-sm text-gray-400">Loading…</p>
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -129,6 +143,19 @@ export default function SchoolSettingsPage() {
           <input className="input" placeholder="https://…" value={form.logo_url} onChange={e => set('logo_url', e.target.value)} />
           {form.logo_url && <img src={form.logo_url} alt="logo" className="mt-2 h-12 rounded object-contain" />}
         </Field>
+      </Section>
+
+      {/* Terms */}
+      <Section title="Term Dates">
+        <TermDatesFields
+          year={termDates.year}
+          terms={termDates.terms}
+          errors={termErrors}
+          onChange={(i, field, value) => {
+            termDates.updateTerm(i, field, value)
+            if (termErrors[i]) setTermErrors(({ [i]: _removed, ...rest }) => rest)
+          }}
+        />
       </Section>
 
       {/* Grading */}
@@ -181,8 +208,6 @@ export default function SchoolSettingsPage() {
           onChange={v => set('sms_notifications', v)} />
         <Toggle label="Teachers can message parents" value={form.teachers_can_message_parents}
           onChange={v => set('teachers_can_message_parents', v)} />
-        <Toggle label="Parents can see marks" value={form.parents_can_see_marks}
-          onChange={v => set('parents_can_see_marks', v)} />
         <Toggle label="Parents can see attendance" value={form.parents_can_see_attendance}
           onChange={v => set('parents_can_see_attendance', v)} />
       </Section>
@@ -196,6 +221,7 @@ export default function SchoolSettingsPage() {
           {saving ? 'Saving…' : 'Save Settings'}
         </button>
         {saved && <span className="text-sm text-emerald-600 font-medium">Saved ✓</span>}
+        {saveError && <span className="text-sm text-red-600">{saveError}</span>}
       </div>
     </div>
   )

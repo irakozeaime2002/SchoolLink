@@ -68,10 +68,35 @@ Deno.serve(async (req) => {
         (subject_ids ?? []).map((subject_id: string) => ({ class_id, subject_id, teacher_id: teacherId }))
       )
       if (rows.length > 0) {
-        const { error: assignError } = await adminClient
+        // class_subjects has no unique key on (class_id, subject_id): reassign existing rows, insert the rest
+        const classIds = [...new Set(rows.map((r: { class_id: string }) => r.class_id))]
+        const { data: existing, error: loadError } = await adminClient
           .from('class_subjects')
-          .upsert(rows, { onConflict: 'class_id,subject_id' })
-        if (assignError) return new Response(JSON.stringify({ error: assignError.message }), { status: 400, headers: corsHeaders })
+          .select('id, class_id, subject_id')
+          .in('class_id', classIds)
+        if (loadError) return new Response(JSON.stringify({ error: loadError.message }), { status: 400, headers: corsHeaders })
+
+        const idByPair = new Map<string, string>()
+        for (const row of existing ?? []) {
+          const key = `${row.class_id}:${row.subject_id}`
+          if (!idByPair.has(key)) idByPair.set(key, row.id)
+        }
+        const toUpdate: string[] = []
+        const toInsert: typeof rows = []
+        for (const r of rows) {
+          const id = idByPair.get(`${r.class_id}:${r.subject_id}`)
+          if (id) toUpdate.push(id)
+          else toInsert.push(r)
+        }
+
+        if (toUpdate.length > 0) {
+          const { error } = await adminClient.from('class_subjects').update({ teacher_id: teacherId }).in('id', toUpdate)
+          if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: corsHeaders })
+        }
+        if (toInsert.length > 0) {
+          const { error } = await adminClient.from('class_subjects').insert(toInsert)
+          if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: corsHeaders })
+        }
       }
 
       if (assignments.length === 1) {

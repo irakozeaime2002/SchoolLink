@@ -1,4 +1,4 @@
-import { CalendarCheck, ChevronDown, KeyRound, MessageSquare, TrendingUp } from 'lucide-react'
+import { CalendarCheck, ChevronDown, KeyRound, MessageSquare, TrendingUp, UserCheck } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import Badge from '../../components/ui/Badge'
 import StatCard from '../../components/ui/StatCard'
@@ -11,7 +11,25 @@ interface Child {
   class_name: string
   school_name: string
   school_id: string
+  status: string
 }
+
+interface AttendanceCounts {
+  present: number
+  absent: number
+  late: number
+  excused: number
+  total: number
+}
+
+const EMPTY_ATTENDANCE: AttendanceCounts = { present: 0, absent: 0, late: 0, excused: 0, total: 0 }
+
+const ATTENDANCE_TILES: { key: keyof Omit<AttendanceCounts, 'total'>; label: string; color: string }[] = [
+  { key: 'present', label: 'Present', color: 'bg-indigo-50 text-indigo-700' },
+  { key: 'absent', label: 'Absent', color: 'bg-red-50 text-red-700' },
+  { key: 'late', label: 'Late', color: 'bg-yellow-50 text-yellow-700' },
+  { key: 'excused', label: 'Excused', color: 'bg-emerald-50 text-emerald-700' },
+]
 
 export default function ParentDashboard() {
   const { user, mustChangePassword, setMustChangePassword } = useAuth()
@@ -19,6 +37,7 @@ export default function ParentDashboard() {
   const [activeChild, setActiveChild] = useState<Child | null>(null)
   const [subjects, setSubjects] = useState<{ name: string; score: number }[]>([])
   const [attendanceRate, setAttendanceRate] = useState<number | null>(null)
+  const [attendance, setAttendance] = useState<AttendanceCounts>(EMPTY_ATTENDANCE)
   const [unreadMessages, setUnreadMessages] = useState(0)
   const [announcements, setAnnouncements] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -43,7 +62,7 @@ export default function ParentDashboard() {
 
       const { data: studentRows } = await supabase
         .from('students')
-        .select('id, full_name, class_id, school_id, classes(name), schools(name)')
+        .select('id, full_name, status, class_id, school_id, classes(name), schools(name)')
         .in('id', studentIds)
 
       const list: Child[] = (studentRows ?? []).map((s: any) => ({
@@ -52,6 +71,7 @@ export default function ParentDashboard() {
         class_name: (s.classes as any)?.name ?? '—',
         school_name: (s.schools as any)?.name ?? '—',
         school_id: s.school_id ?? '',
+        status: s.status ?? '—',
       }))
       setChildren(list)
       if (list.length > 0) setActiveChild(list[0])
@@ -65,6 +85,7 @@ export default function ParentDashboard() {
     async function loadChildData() {
       setSubjects([])
       setAttendanceRate(null)
+      setAttendance(EMPTY_ATTENDANCE)
 
       const { data: marksData } = await supabase
         .from('marks')
@@ -93,8 +114,12 @@ export default function ParentDashboard() {
 
       const { data: att } = await supabase.from('attendance').select('status').eq('student_id', activeChild!.student_id)
       if (att && att.length > 0) {
-        const present = att.filter((a: any) => a.status === 'present' || a.status === 'excused').length
-        setAttendanceRate(Math.round((present / att.length) * 100))
+        const counts: AttendanceCounts = { ...EMPTY_ATTENDANCE, total: att.length }
+        att.forEach((a: any) => {
+          if (a.status in counts && a.status !== 'total') counts[a.status as keyof AttendanceCounts] += 1
+        })
+        setAttendance(counts)
+        setAttendanceRate(Math.round(((counts.present + counts.excused) / att.length) * 100))
       }
 
       const { count } = await supabase
@@ -217,10 +242,11 @@ export default function ParentDashboard() {
 
       {activeChild && (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard label="Overall Average" value={loading ? '…' : overallAvg !== null ? `${overallAvg}%` : '—'} icon={<TrendingUp size={20} />} color="bg-indigo-50 text-indigo-600" />
             <StatCard label="Attendance Rate" value={loading ? '…' : attendanceRate !== null ? `${attendanceRate}%` : '—'} icon={<CalendarCheck size={20} />} color="bg-emerald-50 text-emerald-600" />
             <StatCard label="Unread Messages" value={loading ? '…' : unreadMessages} icon={<MessageSquare size={20} />} color="bg-amber-50 text-amber-600" />
+            <StatCard label="Status" value={<span className="capitalize">{activeChild.status}</span>} icon={<UserCheck size={20} />} color="bg-sky-50 text-sky-600" />
           </div>
 
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
@@ -241,6 +267,21 @@ export default function ParentDashboard() {
                   ))}
                 </div>
             }
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-gray-800">Attendance Summary</h2>
+              <span className="text-xs text-gray-400">{attendance.total} days recorded</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {ATTENDANCE_TILES.map((tile) => (
+                <div key={tile.key} className={`rounded-xl p-3 text-center ${tile.color}`}>
+                  <p className="text-xl font-bold">{attendance[tile.key]}</p>
+                  <p className="text-xs mt-1">{tile.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">

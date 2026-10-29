@@ -2,6 +2,7 @@ import { Pencil, Phone, Plus, Search, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import Badge from '../../components/ui/Badge'
 import Modal from '../../components/ui/Modal'
+import { assignClassSubjects } from '../../lib/classSubjects'
 import { supabase } from '../../lib/supabase'
 
 interface Teacher {
@@ -109,11 +110,13 @@ export default function TeachersPage() {
       // Update assignments if any were set
       const validAssignments = assignments.filter(a => a.class_id && a.subject_ids.length > 0)
       if (validAssignments.length > 0) {
-        await supabase.from('class_subjects').delete().eq('teacher_id', editTeacher.id)
-        const rows = validAssignments.flatMap(({ class_id, subject_ids }) =>
-          subject_ids.map(subject_id => ({ class_id, subject_id, teacher_id: editTeacher.id }))
+        // Unassign (not delete) the teacher's current subjects, so the class keeps its subject list
+        await supabase.from('class_subjects').update({ teacher_id: null }).eq('teacher_id', editTeacher.id)
+        const pairs = validAssignments.flatMap(({ class_id, subject_ids }) =>
+          subject_ids.map(subject_id => ({ class_id, subject_id }))
         )
-        await supabase.from('class_subjects').upsert(rows, { onConflict: 'class_id,subject_id' })
+        const assignError = await assignClassSubjects(editTeacher.id, pairs)
+        if (assignError) { setFormError(assignError); setSaving(false); return }
       }
     } else {
       if (!form.full_name.trim() || !form.email.trim() || !form.password.trim()) {

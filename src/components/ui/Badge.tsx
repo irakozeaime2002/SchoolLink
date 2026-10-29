@@ -8,9 +8,11 @@ const variants = {
   gray: 'bg-gray-100 text-gray-600',
 }
 
+export type BadgeVariant = keyof typeof variants
+
 interface BadgeProps {
   label: string
-  variant?: keyof typeof variants
+  variant?: BadgeVariant
 }
 
 export default function Badge({ label, variant = 'gray' }: BadgeProps) {

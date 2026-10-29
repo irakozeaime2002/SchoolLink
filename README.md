@@ -227,7 +227,3 @@ The current app already has a strong base. To make it production-ready and align
 ## Notes
 
 This project is intentionally focused on a realistic school-management workflow and a clear MVP direction. It aims to balance educational usefulness with a simple, maintainable architecture suitable for a modern React + Supabase application.
-
-## License
-
-This project is private and intended for the SchoolLink application currently being developed.

@@ -109,8 +109,9 @@ export default function WelcomePage() {
       </nav>
 
       {/* Hero */}
-      <section className="bg-gradient-to-br from-indigo-900 via-indigo-800 to-indigo-600 text-white px-6 sm:px-10 py-20 sm:py-28 text-center">
-        <div className="max-w-3xl mx-auto">
+      <section className="relative text-white px-6 sm:px-10 py-20 sm:py-28 text-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1529390079861-591de354faf5?w=1600&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/75 via-indigo-800/65 to-indigo-600/60" />
+        <div className="relative z-10 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-white/10 text-indigo-200 text-xs font-medium px-3 py-1.5 rounded-full mb-6">
             <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />
             Built for Rwandan Schools

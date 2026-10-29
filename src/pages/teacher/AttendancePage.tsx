@@ -1,7 +1,8 @@
 import { Save } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Badge from '../../components/ui/Badge'
 import { useAuth } from '../../context/AuthContext'
+import { todayISO } from '../../lib/assessments'
 import { supabase } from '../../lib/supabase'
 
 type Status = 'present' | 'absent' | 'late' | 'excused'
@@ -20,13 +21,30 @@ const badgeVariant: Record<Status, 'green' | 'red' | 'yellow' | 'blue'> = {
 
 export default function AttendancePage() {
   const { user } = useAuth()
-  const today = new Date().toISOString().split('T')[0]
+  // Local date, so early-morning entries aren't recorded against yesterday (UTC)
+  const today = todayISO()
   const [classes, setClasses] = useState<ClassOption[]>([])
   const [selectedClass, setSelectedClass] = useState('')
   const [students, setStudents] = useState<Student[]>([])
   const [attendance, setAttendance] = useState<Record<string, Status>>({})
+  // student_id -> existing attendance row id for today (attendance has no unique key on student+date)
+  const [recordIds, setRecordIds] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState('')
+
+  const loadExisting = useCallback(async (classId: string) => {
+    const { data } = await supabase.from('attendance').select('id, student_id, status')
+      .eq('class_id', classId).eq('date', today)
+    const existing: Record<string, Status> = {}
+    const ids: Record<string, string> = {}
+    ;(data ?? []).forEach((a: any) => {
+      existing[a.student_id] = a.status
+      ids[a.student_id] = a.id
+    })
+    setAttendance((prev) => ({ ...prev, ...existing }))
+    setRecordIds(ids)
+  }, [today])
 
   useEffect(() => {
     if (!user?.id) return
@@ -38,29 +56,27 @@ export default function AttendancePage() {
 
   useEffect(() => {
     if (!selectedClass) return
-    supabase.from('students').select('id, full_name').eq('class_id', selectedClass).order('full_name')
-      .then(({ data }) => {
-        setStudents(data ?? [])
-        const defaults: Record<string, Status> = {}
-        ;(data ?? []).forEach((s: any) => { defaults[s.id] = 'present' })
-        setAttendance(defaults)
-      })
-
-    // Load existing attendance for today
-    supabase.from('attendance').select('student_id, status').eq('class_id', selectedClass).eq('date', today)
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          const existing: Record<string, Status> = {}
-          data.forEach((a: any) => { existing[a.student_id] = a.status })
-          setAttendance((prev) => ({ ...prev, ...existing }))
-        }
-      })
-  }, [selectedClass])
+    let cancelled = false
+    async function load() {
+      const { data } = await supabase.from('students').select('id, full_name').eq('class_id', selectedClass).order('full_name')
+      if (cancelled) return
+      setStudents(data ?? [])
+      const defaults: Record<string, Status> = {}
+      ;(data ?? []).forEach((s: any) => { defaults[s.id] = 'present' })
+      setAttendance(defaults)
+      setRecordIds({})
+      // Existing attendance for today overrides the defaults
+      await loadExisting(selectedClass)
+    }
+    load()
+    return () => { cancelled = true }
+  }, [selectedClass, loadExisting])
 
   async function handleSave() {
     if (!selectedClass || !user?.id) return
     setSaving(true)
-    const upserts = students.map((s) => ({
+    setSaveError('')
+    const rows = students.map((s) => ({
       school_id: user.school_id,
       class_id: selectedClass,
       student_id: s.id,
@@ -68,8 +84,18 @@ export default function AttendancePage() {
       date: today,
       status: attendance[s.id] ?? 'present',
     }))
-    await supabase.from('attendance').upsert(upserts, { onConflict: 'student_id,date' })
+    const updates = rows.filter((r) => recordIds[r.student_id]).map((r) => ({ ...r, id: recordIds[r.student_id] }))
+    const inserts = rows.filter((r) => !recordIds[r.student_id])
+
+    const [updateResult, insertResult] = await Promise.all([
+      updates.length ? supabase.from('attendance').upsert(updates, { onConflict: 'id' }) : Promise.resolve({ error: null }),
+      inserts.length ? supabase.from('attendance').insert(inserts) : Promise.resolve({ error: null }),
+    ])
+    const error = updateResult.error ?? insertResult.error
+    // Refresh ids so saving again updates instead of creating duplicates
+    await loadExisting(selectedClass)
     setSaving(false)
+    if (error) { setSaveError(error.message); return }
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -93,6 +119,8 @@ export default function AttendancePage() {
         {classes.length === 0 && <option>No classes assigned</option>}
         {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
       </select>
+
+      {saveError && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{saveError}</p>}
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <table className="w-full text-sm">
