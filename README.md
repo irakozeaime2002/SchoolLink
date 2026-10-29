@@ -1,3 +1,14 @@
+## Problem specification
+
+Review of the education reports and statistical data in this project provides context about Rwanda’s education sector and the learners schools serve. However, national-level statistics do not by themselves show how individual schools communicate with families or manage each learner’s progress.
+
+At the school level, staff need practical ways to keep student records, attendance, assessment results, and support actions organized and accessible. When this information is difficult to follow over time or share with families, parents may have limited visibility into a child’s progress, teachers may find it harder to coordinate support, and school leaders may lack a clear overview for decision-making.
+
+SchoolLink addresses this need with a shared platform for headteachers, teachers, and parents. It brings student information, marks, attendance, interventions, announcements, and messages together, helping schools monitor progress and communicate with families throughout the school year.
+
+The intended outcome is better-informed families, more coordinated learner support, and clearer school-level oversight. The platform is designed to support these goals; its impact should be assessed through use in schools rather than assumed from national statistics alone.
+
+
 # SchoolLink
 
 SchoolLink is a school–parent platform built to help schools and families stay connected around every learner’s progress. It gives headteachers, teachers, and parents a simple way to track student performance, attendance, interventions, announcements, and communication in one place.
