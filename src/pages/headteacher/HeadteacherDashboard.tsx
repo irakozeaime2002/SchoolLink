@@ -1,7 +1,6 @@
 import {
   AlertCircle,
   BookOpen,
-  CalendarCheck,
   ClipboardList,
   GraduationCap,
   Users,
