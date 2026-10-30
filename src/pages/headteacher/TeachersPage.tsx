@@ -1,4 +1,5 @@
 import { Pencil, Phone, Plus, Search, Trash2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import Badge from '../../components/ui/Badge'
 import Modal from '../../components/ui/Modal'
@@ -31,6 +32,7 @@ export default function TeachersPage() {
   const [classes, setClasses] = useState<ClassOption[]>([])
   const [subjects, setSubjects] = useState<SubjectOption[]>([])
   const [formError, setFormError] = useState('')
+  const navigate = useNavigate()
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [schoolId, setSchoolId] = useState<string | null>(null)
@@ -211,7 +213,15 @@ export default function TeachersPage() {
               : filtered.map((t, i) => (
                 <tr key={t.id} className="hover:bg-gray-50">
                   <td className="px-5 py-3 text-gray-400">{i + 1}</td>
-                  <td className="px-5 py-3 font-medium text-gray-800">{t.full_name}</td>
+                  <td className="px-5 py-3">
+  <button
+    type="button"
+    onClick={() => navigate(`/headteacher/teachers/${t.id}`)}
+    className="font-medium text-indigo-700 hover:text-indigo-900 hover:underline"
+  >
+    {t.full_name}
+  </button>
+</td>
                   <td className="px-5 py-3 text-gray-500">
                     {t.phone ? <span className="flex items-center gap-1"><Phone size={12} />{t.phone}</span> : <span className="text-gray-300">—</span>}
                   </td>

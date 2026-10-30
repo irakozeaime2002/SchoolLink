@@ -25,7 +25,9 @@ import AnnouncementsPage from './pages/shared/AnnouncementsPage'
 import MessagesPage from './pages/shared/MessagesPage'
 import AttendancePage from './pages/teacher/AttendancePage'
 import MarksPage from './pages/teacher/MarksPage'
+import TeacherAnalyticsPage from './pages/headteacher/TeacherAnalyticsPage'
 import TeacherClassesPage from './pages/teacher/TeacherClassesPage'
+import TeacherClassAnalyticsPage from './pages/teacher/TeacherClassAnalyticsPage'
 import TeacherDashboard from './pages/teacher/TeacherDashboard'
 import TeacherAssessmentsPage from './pages/teacher/AssessmentsPage'
 import TeacherReportsPage from './pages/teacher/ReportsPage'
@@ -54,6 +56,7 @@ export default function App() {
               <Route path="/headteacher" element={<HeadteacherDashboard />} />
               <Route path="/headteacher/academic-years" element={<AcademicYearsPage />} />
               <Route path="/headteacher/teachers" element={<TeachersPage />} />
+              <Route path="/headteacher/teachers/:id" element={<TeacherAnalyticsPage />} />
               <Route path="/headteacher/classes" element={<ClassesPage />} />
               <Route path="/headteacher/classes/:id" element={<ClassDetailPage />} />
               <Route path="/headteacher/students" element={<StudentsPage />} />
@@ -71,6 +74,10 @@ export default function App() {
             <Route element={<AppLayout />}>
               <Route path="/teacher" element={<TeacherDashboard />} />
               <Route path="/teacher/classes" element={<TeacherClassesPage />} />
+              <Route
+                path="/teacher/classes/:classId/subjects/:subjectId"
+                element={<TeacherClassAnalyticsPage />}
+              />
               <Route path="/teacher/students" element={<TeacherStudentsPage />} />
               <Route path="/teacher/marks" element={<MarksPage />} />
               <Route path="/teacher/attendance" element={<AttendancePage />} />

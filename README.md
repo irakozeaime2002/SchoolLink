@@ -1,3 +1,14 @@
+## Test Accounts
+
+| Role | Email | Password |
+|---|---|---|
+| Headteacher | irakoze@gmail.com | 123456 |
+| Teacher | john1@gmail.com | 123456 |
+| Parent | parent@gmail.com | Parent1 |
+| Admin | admin@gmail.com | Admin@1 |
+
+Deployed link: schoolmerge.vercel.app
+
 # SchoolLink
 
 SchoolLink is a digital platform that helps schools and families follow learners’ academic progress and stay connected. Headteachers, teachers, and parents can access relevant student information, assessments, attendance, support activities, announcements, and messages in one place. The platform is designed for schools in Rwanda, with each school’s information kept within its own school context.
