@@ -7,7 +7,7 @@
 | Parent | parent@gmail.com | Parent1 |
 | Admin | admin@gmail.com | Admin@1 |
 
-Deployed link: schoolmerge.vercel.app
+**Deployed site:** [schoolmerge.vercel.app](https://schoolmerge.vercel.app)
 
 # SchoolLink
 
