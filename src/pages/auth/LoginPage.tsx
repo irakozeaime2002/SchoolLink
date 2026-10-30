@@ -1,4 +1,4 @@
-import { GraduationCap } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Eye, EyeOff, GraduationCap, ShieldCheck } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
@@ -12,7 +12,9 @@ export default function LoginPage() {
   const [tab, setTab] = useState<Tab>('staff')
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [helpMessage, setHelpMessage] = useState('')
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -22,6 +24,7 @@ export default function LoginPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError('')
+    setHelpMessage('')
     setLoading(true)
 
     try {
@@ -49,7 +52,6 @@ export default function LoginPage() {
       })
 
       if (signInError) throw signInError
-
       // AuthContext handles navigation after a successful sign-in.
     } catch (caughtError) {
       setError(
@@ -61,133 +63,174 @@ export default function LoginPage() {
     }
   }
 
+  function changeTab(nextTab: Tab) {
+    setTab(nextTab)
+    setIdentifier('')
+    setPassword('')
+    setError('')
+    setHelpMessage('')
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-indigo-50 to-white p-4">
-      <div className="w-full max-w-md">
-        <div className="mb-8 flex flex-col items-center">
-          <button
-            onClick={() => navigate('/')}
-            className="group flex flex-col items-center"
-            type="button"
-          >
-            <div className="mb-3 rounded-2xl bg-indigo-600 p-3 text-white transition-colors group-hover:bg-indigo-700">
-              <GraduationCap size={32} />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900">SchoolLink</h1>
-          </button>
-          <p className="mt-1 text-sm text-gray-500">Sign in to your account</p>
+    <main className="login-page">
+      <button
+        className="login-back"
+        type="button"
+        onClick={() => navigate('/')}
+      >
+        <ArrowLeft size={17} />
+        Back to home
+      </button>
+
+      <section className="login-card" aria-labelledby="login-title">
+        <button
+          className="login-brand"
+          type="button"
+          onClick={() => navigate('/')}
+          aria-label="SchoolLink home"
+        >
+          <span className="login-brand-icon">
+            <GraduationCap size={27} />
+          </span>
+          <span>School<span>Link</span></span>
+        </button>
+
+        <div className="login-heading">
+          <span className="login-secure-badge">
+            <ShieldCheck size={14} />
+            SECURE SCHOOL ACCESS
+          </span>
+          <h1 id="login-title">Welcome back</h1>
+          <p>Sign in to stay connected with your school community.</p>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-          <div className="flex border-b border-gray-100">
-            <button
-              onClick={() => {
-                setTab('staff')
-                setError('')
-                setIdentifier('')
-              }}
-              className={`flex-1 py-3 text-sm font-medium transition-colors ${
+        <div className="login-tabs" role="tablist" aria-label="Account type">
+          <button
+            className={tab === 'staff' ? 'login-tab login-tab-active' : 'login-tab'}
+            type="button"
+            role="tab"
+            aria-selected={tab === 'staff'}
+            onClick={() => changeTab('staff')}
+          >
+            School staff
+          </button>
+          <button
+            className={tab === 'parent' ? 'login-tab login-tab-active' : 'login-tab'}
+            type="button"
+            role="tab"
+            aria-selected={tab === 'parent'}
+            onClick={() => changeTab('parent')}
+          >
+            Parent
+          </button>
+        </div>
+
+        <form className="login-form" onSubmit={handleSubmit}>
+          {(error || loginError) && (
+            <div className="login-message login-error" role="alert">
+              {error || loginError}
+            </div>
+          )}
+
+          {helpMessage && (
+            <div className="login-message login-help" role="status">
+              {helpMessage}
+            </div>
+          )}
+
+          <div className="login-field">
+            <label htmlFor="login-identifier">
+              {tab === 'staff' ? 'Email address' : 'Email or phone number'}
+            </label>
+            <input
+              id="login-identifier"
+              type={tab === 'staff' ? 'email' : 'text'}
+              required
+              autoComplete="username"
+              value={identifier}
+              onChange={(event) => setIdentifier(event.target.value)}
+              placeholder={
                 tab === 'staff'
-                  ? 'border-b-2 border-indigo-600 bg-indigo-50/50 text-indigo-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-              type="button"
-            >
-              Staff
-            </button>
-            <button
-              onClick={() => {
-                setTab('parent')
-                setError('')
-                setIdentifier('')
-              }}
-              className={`flex-1 py-3 text-sm font-medium transition-colors ${
-                tab === 'parent'
-                  ? 'border-b-2 border-indigo-600 bg-indigo-50/50 text-indigo-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-              type="button"
-            >
-              Parent
-            </button>
+                  ? 'you@school.rw'
+                  : 'Email address or registered phone'
+              }
+            />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5 p-8">
-            {(error || loginError) && (
-              <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
-                {error || loginError}
-              </div>
-            )}
-
-            <div>
-              <label
-                htmlFor="login-identifier"
-                className="mb-1 block text-sm font-medium text-gray-700"
-              >
-                {tab === 'staff' ? 'Email' : 'Email or phone number'}
-              </label>
-              <input
-                id="login-identifier"
-                type={tab === 'staff' ? 'email' : 'text'}
-                required
-                autoComplete="username"
-                value={identifier}
-                onChange={(event) => setIdentifier(event.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder={
-                  tab === 'staff'
-                    ? 'you@school.rw'
-                    : 'parent@example.com or +250 788 000 000'
-                }
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="login-password"
-                className="mb-1 block text-sm font-medium text-gray-700"
-              >
-                Password
-              </label>
+          <div className="login-field">
+            <label htmlFor="login-password">Password</label>
+            <div className="login-password-wrap">
               <input
                 id="login-password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="Enter your password"
               />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-60"
-            >
-              {loading ? 'Signing in…' : 'Sign in'}
-            </button>
-
-            {tab === 'parent' && (
-              <p className="text-center text-xs text-gray-400">
-                Use the email address or phone number registered by your school.
-              </p>
-            )}
-
-            <p className="text-center text-sm text-gray-500">
-              New school or teacher?{' '}
               <button
+                className="login-password-toggle"
                 type="button"
-                onClick={() => navigate('/register')}
-                className="font-medium text-indigo-600 hover:underline"
+                onClick={() => setShowPassword((visible) => !visible)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-pressed={showPassword}
               >
-                Register here
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
+            </div>
+          </div>
+
+          <div className="login-options">
+            <span className="login-option-note">
+              Use the account details provided by your school.
+            </span>
+            <button
+              className="login-help-link"
+              type="button"
+              onClick={() =>
+                setHelpMessage(
+                  'Please contact your school administrator for help accessing or resetting your password.',
+                )
+              }
+            >
+              Need help?
+            </button>
+          </div>
+
+          <button className="login-submit" type="submit" disabled={loading}>
+            {loading ? 'Signing in…' : 'Sign in'}
+            {!loading && <ArrowRight size={18} />}
+          </button>
+
+          {tab === 'parent' && (
+            <p className="login-parent-note">
+              Use the email address or phone number registered by your school.
             </p>
-          </form>
+          )}
+        </form>
+
+        <div className="login-divider">
+          <span />
+          <span>NEW TO SCHOOLLINK?</span>
+          <span />
         </div>
-      </div>
-    </div>
+
+        <p className="login-register">
+          New school or teacher?{' '}
+          <button type="button" onClick={() => navigate('/register')}>
+            Register here
+          </button>
+        </p>
+
+        <p className="login-footer-note">
+          Your school information is protected with secure account access.
+        </p>
+      </section>
+
+      <p className="login-page-caption">
+        SchoolLink <span>·</span> Bringing school communities together
+      </p>
+    </main>
   )
 }
