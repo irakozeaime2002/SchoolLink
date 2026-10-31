@@ -191,7 +191,7 @@ Important database components include:
 - messages
 - interventions
 
-The SQL schema and seed data for the application are included in the `supabase/` directory.
+The SQL schema for the application is included in the `supabase/` directory.
 
 
 ## Roadmap
@@ -205,7 +205,6 @@ The SQL schema and seed data for the application are included in the `supabase/`
 - teacher and parent dashboards
 
 ### Next stage
-- reporting and trend analytics
 - AI-supported learning insights
 - richer communication features
 - mobile-focused improvements
