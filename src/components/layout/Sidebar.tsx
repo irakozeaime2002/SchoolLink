@@ -17,6 +17,7 @@ import {
   TrendingUp,
   Users,
   X,
+  UserRound,
 } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
@@ -27,6 +28,7 @@ const navItems: Record<Role, { label: string; to: string; icon: React.ReactNode 
   platform_admin: [
     { label: 'Dashboard', to: '/admin', icon: <LayoutDashboard size={18} /> },
     { label: 'Schools', to: '/admin/schools', icon: <School size={18} /> },
+    { label: 'Profile', to: '/profile', icon: <UserRound size={18} /> },
   ],
   headteacher: [
     { label: 'Dashboard', to: '/headteacher', icon: <LayoutDashboard size={18} /> },
@@ -38,6 +40,7 @@ const navItems: Record<Role, { label: string; to: string; icon: React.ReactNode 
     { label: 'Messages', to: '/headteacher/messages', icon: <MessageSquare size={18} /> },
     { label: 'Announcements', to: '/headteacher/announcements', icon: <Bell size={18} /> },
     { label: 'Settings', to: '/headteacher/settings', icon: <Settings size={18} /> },
+    { label: 'Profile', to: '/profile', icon: <UserRound size={18} /> },
   ],
 
   teacher: [
@@ -50,6 +53,7 @@ const navItems: Record<Role, { label: string; to: string; icon: React.ReactNode 
     { label: 'Reports', to: '/teacher/reports', icon: <FileText size={18} /> },
     { label: 'Messages', to: '/teacher/messages', icon: <MessageSquare size={18} /> },
     { label: 'Announcements', to: '/teacher/announcements', icon: <Bell size={18} /> },
+    { label: 'Profile', to: '/profile', icon: <UserRound size={18} /> },
   ],
   parent: [
     { label: 'Dashboard', to: '/parent', icon: <LayoutDashboard size={18} /> },
@@ -59,6 +63,7 @@ const navItems: Record<Role, { label: string; to: string; icon: React.ReactNode 
     { label: 'Support', to: '/parent/support', icon: <TrendingUp size={18} /> },
     { label: 'Messages', to: '/parent/messages', icon: <MessageSquare size={18} /> },
     { label: 'Announcements', to: '/parent/announcements', icon: <Bell size={18} /> },
+    { label: 'Profile', to: '/profile', icon: <UserRound size={18} /> },
   ],
 }
 

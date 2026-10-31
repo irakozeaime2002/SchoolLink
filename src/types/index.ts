@@ -9,6 +9,7 @@ export interface User {
   full_name: string
   role: Role
   school_id: string | null
+  phone?: string | null
   avatar_url?: string
   must_change_password?: boolean
 }

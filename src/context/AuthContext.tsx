@@ -10,11 +10,13 @@ interface AuthContextType {
   loading: boolean
   loginError: string
   mustChangePassword: boolean
+  updateUserProfile: (profile: Pick<User, 'full_name' | 'phone' | 'avatar_url'>) => void
   setMustChangePassword: (v: boolean) => void
   signOut: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType>({
+  updateUserProfile: () => {},
   session: null,
   user: null,
   loading: true,
@@ -25,6 +27,9 @@ const AuthContext = createContext<AuthContextType>({
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  function updateUserProfile(profile: Pick<User, 'full_name' | 'phone' | 'avatar_url'>) {
+  setUser((current) => current ? { ...current, ...profile } : current)
+}
   const [session, setSession] = useState<Session | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
@@ -94,7 +99,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, loginError, mustChangePassword, setMustChangePassword, signOut }}>
+    <AuthContext.Provider value={{ session,
+    user,
+    loading,
+    loginError,
+    mustChangePassword,
+    setMustChangePassword,
+    signOut,
+    updateUserProfile,}}>
       {children}
     </AuthContext.Provider>
   )

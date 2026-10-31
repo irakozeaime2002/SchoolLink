@@ -159,7 +159,6 @@ SchoolLink/
 │  └─ index.css
 ├─ supabase/
 │  ├─ schema.sql
-│  ├─ seed.sql
 │  └─ config.toml
 ├─ .env.example
 ├─ .gitignore
@@ -168,39 +167,6 @@ SchoolLink/
 ├─ vite.config.ts
 ├─ README.md
 └─ vercel.json
-```
-
-## Local development
-
-1. Install dependencies:
-
-```bash
-npm install
-```
-
-2. Create a local environment file:
-
-```bash
-cp .env.example .env
-```
-
-3. Add your Supabase credentials:
-
-```env
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
-
-4. Start the app:
-
-```bash
-npm run dev
-```
-
-5. Build for production:
-
-```bash
-npm run build
 ```
 
 ## Supabase setup
@@ -225,33 +191,6 @@ Important database components include:
 
 The SQL schema and seed data for the application are included in the `supabase/` directory.
 
-## Important features to add next
-
-The current app already has a strong base. To make it production-ready and aligned with the product vision, these are the most important additions:
-
-### High priority
-- role-based access control for headteacher, teacher, and parent accounts
-- school-specific data isolation and secure multi-tenant enforcement
-- parent authentication flow and password reset support
-- real-time notifications and alerts for attendance and marks updates
-- secure CRUD flows for announcements, messages, and student records
-- attendance summary and school-wide reporting dashboards
-
-### Important product features
-- student progress analytics across terms and subjects
-- teacher observation notes and intervention tracking history
-- homework posting with due-date visibility for parents
-- parent–teacher meeting creation and confirmation
-- printable student reports and end-of-term summaries
-- AI-assisted insight recommendations grounded in school data
-
-### Business and quality improvements
-- audit logging for sensitive educational records
-- data validation rules for marks, scores, and attendance
-- file upload support for student documents and profile photos
-- export to PDF/CSV for reports and school records
-- onboarding flow for new schools
-- notification preferences per parent and teacher
 
 ## Roadmap
 

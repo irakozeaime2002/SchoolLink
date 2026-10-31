@@ -33,6 +33,7 @@ import TeacherAssessmentsPage from './pages/teacher/AssessmentsPage'
 import TeacherReportsPage from './pages/teacher/ReportsPage'
 import TeacherStudentDetailPage from './pages/teacher/TeacherStudentDetailPage'
 import TeacherStudentsPage from './pages/teacher/TeacherStudentsPage'
+import ProfilePage from './pages/shared/ProfilePage'
 
 export default function App() {
   return (
@@ -42,7 +43,11 @@ export default function App() {
           <Route path="/" element={<WelcomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-
+<Route element={<ProtectedRoute />}>
+  <Route element={<AppLayout />}>
+    <Route path="/profile" element={<ProfilePage />} />
+  </Route>
+</Route>
           {/* Platform Admin */}
           <Route element={<ProtectedRoute allowedRoles={['platform_admin']} />}>
             <Route element={<AppLayout />}>

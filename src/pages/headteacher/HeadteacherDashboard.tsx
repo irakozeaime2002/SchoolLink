@@ -697,13 +697,13 @@ export default function HeadteacherDashboard() {
     ? `${selectedTerm.name} · ${selectedYear?.name ?? ''}`
     : selectedYear?.name ?? 'Selected academic year'
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    return (
+    <div className="space-y-5">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">School Overview</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Welcome back, {user?.full_name}. Analytics for {periodLabel}.
+            School performance for {periodLabel}.
           </p>
         </div>
 
@@ -744,6 +744,11 @@ export default function HeadteacherDashboard() {
             </select>
           </label>
         </div>
+      </header>
+
+      <div className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
+        <strong>Welcome back, {user?.full_name ?? 'there'}.</strong>
+        {' '}Here is your school’s latest overview for {periodLabel}.
       </div>
 
       {error && (
@@ -756,7 +761,7 @@ export default function HeadteacherDashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
           label="Active students"
           value={loading ? '…' : analytics.activeStudents.length}
@@ -778,11 +783,11 @@ export default function HeadteacherDashboard() {
         <StatCard
           label="School average"
           value={
-            loading || analytics.overallAverage === null
-              ? loading
-                ? '…'
-                : '—'
-              : `${analytics.overallAverage}%`
+            loading
+              ? '…'
+              : analytics.overallAverage === null
+                ? '—'
+                : `${analytics.overallAverage}%`
           }
           icon={<ClipboardList size={20} />}
           color="bg-sky-50 text-sky-600"
@@ -797,20 +802,20 @@ export default function HeadteacherDashboard() {
 
       {selectedYearId && (
         <>
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="dashboard-charts">
+            <section className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
               <h2 className="font-semibold text-gray-900">Average by subject</h2>
-              <p className="mb-4 text-sm text-gray-500">
-                Mark percentages in {periodLabel}.
+              <p className="mb-3 text-sm text-gray-500">
+                Student mark average, shown as a percentage.
               </p>
 
-              {analytics.subjectChartData.length ? (
-                <div className="h-72">
+              {analytics.subjectChartData.length > 0 ? (
+                <div className="h-60">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={analytics.subjectChartData}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
                       <XAxis dataKey="subject" tick={{ fontSize: 11 }} />
-                      <YAxis domain={[0, 100]} unit="%" />
+                      <YAxis domain={[0, 100]} unit="%" width={40} />
                       <Tooltip
                         formatter={(value) => [`${Number(value)}%`, 'Average']}
                       />
@@ -824,25 +829,25 @@ export default function HeadteacherDashboard() {
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <p className="py-16 text-center text-sm text-gray-400">
+                <p className="py-12 text-center text-sm text-gray-400">
                   No marks are recorded for this period.
                 </p>
               )}
             </section>
 
-            <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+            <section className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
               <h2 className="font-semibold text-gray-900">Average by class</h2>
-              <p className="mb-4 text-sm text-gray-500">
+              <p className="mb-3 text-sm text-gray-500">
                 Results across subjects for the selected period.
               </p>
 
-              {analytics.classChartData.length ? (
-                <div className="h-72">
+              {analytics.classChartData.length > 0 ? (
+                <div className="h-60">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={analytics.classChartData}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
                       <XAxis dataKey="className" tick={{ fontSize: 11 }} />
-                      <YAxis domain={[0, 100]} unit="%" />
+                      <YAxis domain={[0, 100]} unit="%" width={40} />
                       <Tooltip
                         formatter={(value) => [`${Number(value)}%`, 'Average']}
                       />
@@ -856,27 +861,25 @@ export default function HeadteacherDashboard() {
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <p className="py-16 text-center text-sm text-gray-400">
+                <p className="py-12 text-center text-sm text-gray-400">
                   No class results are available for this period.
                 </p>
               )}
             </section>
-          </div>
 
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+            <section className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
               <h2 className="font-semibold text-gray-900">Attendance trend</h2>
-              <p className="mb-4 text-sm text-gray-500">
-                Recorded school days; excused records are excluded.
+              <p className="mb-3 text-sm text-gray-500">
+                Daily attendance rate. Excused records are excluded.
               </p>
 
-              {analytics.attendanceTrend.length ? (
-                <div className="h-64">
+              {analytics.attendanceTrend.length > 0 ? (
+                <div className="h-60">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={analytics.attendanceTrend}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis domain={[0, 100]} unit="%" />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                      <YAxis domain={[0, 100]} unit="%" width={40} />
                       <Tooltip
                         formatter={(value) => [`${Number(value)}%`, 'Attendance']}
                       />
@@ -892,32 +895,32 @@ export default function HeadteacherDashboard() {
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <p className="py-16 text-center text-sm text-gray-400">
+                <p className="py-12 text-center text-sm text-gray-400">
                   No attendance records are available for this period.
                 </p>
               )}
 
-              <p className="mt-3 text-xs text-gray-500">
+              <p className="mt-2 text-xs text-gray-500">
                 {analytics.absenceCount} absences · {analytics.lateCount} late arrivals
               </p>
             </section>
 
-            <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+            <section className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
               <h2 className="font-semibold text-gray-900">Attendance breakdown</h2>
-              <p className="mb-4 text-sm text-gray-500">
+              <p className="mb-3 text-sm text-gray-500">
                 Recorded attendance statuses for {periodLabel}.
               </p>
 
-              {analytics.attendanceBreakdown.length ? (
-                <div className="h-64">
+              {analytics.attendanceBreakdown.length > 0 ? (
+                <div className="h-60">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={analytics.attendanceBreakdown}
                         dataKey="value"
                         nameKey="name"
-                        innerRadius={55}
-                        outerRadius={90}
+                        innerRadius={48}
+                        outerRadius={78}
                         paddingAngle={3}
                       >
                         {analytics.attendanceBreakdown.map((item, index) => (
@@ -932,7 +935,7 @@ export default function HeadteacherDashboard() {
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <p className="py-16 text-center text-sm text-gray-400">
+                <p className="py-12 text-center text-sm text-gray-400">
                   No attendance records are available for this period.
                 </p>
               )}
@@ -944,60 +947,59 @@ export default function HeadteacherDashboard() {
                   : `${analytics.attendanceRate}%`}
               </p>
             </section>
+
+            <section className="dashboard-chart-wide rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+              <h2 className="font-semibold text-gray-900">Class-teacher comparison</h2>
+              <p className="mb-3 text-sm text-gray-500">
+                Average marks for classes led by each class teacher. This is a
+                class-level comparison, not a measure of an individual teacher’s
+                teaching quality.
+              </p>
+
+              {analytics.teacherChartData.length > 0 ? (
+                <div className="h-60">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={analytics.teacherChartData} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                      <XAxis type="number" domain={[0, 100]} unit="%" />
+                      <YAxis
+                        type="category"
+                        dataKey="teacherName"
+                        width={130}
+                        tick={{ fontSize: 11 }}
+                      />
+                      <Tooltip
+                        formatter={(value) => [`${Number(value)}%`, 'Class average']}
+                      />
+                      <Bar
+                        dataKey="average"
+                        name="Class average"
+                        fill="#0891b2"
+                        radius={[0, 5, 5, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <p className="py-10 text-center text-sm text-gray-400">
+                  No class-teacher comparison is available for this period.
+                </p>
+              )}
+            </section>
           </div>
 
-          <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-            <h2 className="font-semibold text-gray-900">Teacher comparison</h2>
-            <p className="mb-4 text-sm text-gray-500">
-              Average marks for classes led by each class teacher. This is a
-              class-level comparison, not a measure of an individual teacher’s
-              teaching quality.
-            </p>
-
-            {analytics.teacherChartData.length ? (
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={analytics.teacherChartData} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                    <XAxis type="number" domain={[0, 100]} unit="%" />
-                    <YAxis
-                      type="category"
-                      dataKey="teacherName"
-                      width={130}
-                      tick={{ fontSize: 11 }}
-                    />
-                    <Tooltip
-                      formatter={(value) => [`${Number(value)}%`, 'Class average']}
-                    />
-                    <Bar
-                      dataKey="average"
-                      name="Class average"
-                      fill="#0891b2"
-                      radius={[0, 5, 5, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <p className="py-12 text-center text-sm text-gray-400">
-                No class-teacher comparison is available for this period.
-              </p>
-            )}
-          </section>
-
           <section className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
-            <div className="flex items-center gap-2 border-b border-gray-100 p-5">
+            <div className="flex items-center gap-2 border-b border-gray-100 p-4">
               <AlertCircle size={18} className="text-amber-600" />
               <div>
                 <h2 className="font-semibold text-gray-900">Students needing support</h2>
                 <p className="text-sm text-gray-500">
-                  Flagged for an average below 60% or at least two recorded
-                  absences in the selected period.
+                  Average below 60% or at least two recorded absences in this period.
                 </p>
               </div>
             </div>
 
-            {analytics.supportStudents.length ? (
+            {analytics.supportStudents.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-gray-50 text-gray-500">
@@ -1036,7 +1038,7 @@ export default function HeadteacherDashboard() {
           </section>
 
           <section className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
-            <div className="flex items-center gap-2 border-b border-gray-100 p-5">
+            <div className="flex items-center gap-2 border-b border-gray-100 p-4">
               <BookOpen size={18} className="text-indigo-600" />
               <div>
                 <h2 className="font-semibold text-gray-900">Class overview</h2>
@@ -1059,19 +1061,11 @@ export default function HeadteacherDashboard() {
                 <tbody className="divide-y divide-gray-100">
                   {analytics.classPerformance.map((classRow) => (
                     <tr key={classRow.id}>
-                      <td className="px-5 py-3 font-medium text-gray-800">
-                        {classRow.name}
-                      </td>
+                      <td className="px-5 py-3 font-medium text-gray-800">{classRow.name}</td>
+                      <td className="px-5 py-3 text-gray-600">{classRow.studentCount}</td>
+                      <td className="px-5 py-3 text-gray-600">{classRow.teacherName}</td>
                       <td className="px-5 py-3 text-gray-600">
-                        {classRow.studentCount}
-                      </td>
-                      <td className="px-5 py-3 text-gray-600">
-                        {classRow.teacherName}
-                      </td>
-                      <td className="px-5 py-3 text-gray-600">
-                        {classRow.average === null
-                          ? '—'
-                          : `${classRow.average}%`}
+                        {classRow.average === null ? '—' : `${classRow.average}%`}
                       </td>
                     </tr>
                   ))}
@@ -1088,7 +1082,7 @@ export default function HeadteacherDashboard() {
           </section>
 
           <section className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
-            <div className="flex items-center gap-2 border-b border-gray-100 p-5">
+            <div className="flex items-center gap-2 border-b border-gray-100 p-4">
               <ClipboardList size={18} className="text-sky-600" />
               <div>
                 <h2 className="font-semibold text-gray-900">Assessment and mark coverage</h2>
@@ -1100,7 +1094,7 @@ export default function HeadteacherDashboard() {
               </div>
             </div>
 
-            {analytics.assessmentCoverage.length ? (
+            {analytics.assessmentCoverage.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-gray-50 text-gray-500">
@@ -1116,24 +1110,14 @@ export default function HeadteacherDashboard() {
                   <tbody className="divide-y divide-gray-100">
                     {analytics.assessmentCoverage.map((assessment) => (
                       <tr key={assessment.id}>
-                        <td className="px-5 py-3 font-medium text-gray-800">
-                          {assessment.title}
-                        </td>
-                        <td className="px-5 py-3 text-gray-600">
-                          {assessment.className}
-                        </td>
-                        <td className="px-5 py-3 text-gray-600">
-                          {assessment.subjectName}
-                        </td>
-                        <td className="px-5 py-3 text-gray-600">
-                          {formatDate(assessment.date)}
-                        </td>
+                        <td className="px-5 py-3 font-medium text-gray-800">{assessment.title}</td>
+                        <td className="px-5 py-3 text-gray-600">{assessment.className}</td>
+                        <td className="px-5 py-3 text-gray-600">{assessment.subjectName}</td>
+                        <td className="px-5 py-3 text-gray-600">{formatDate(assessment.date)}</td>
                         <td className="px-5 py-3 text-gray-600">
                           {assessment.entered}/{assessment.expected}
                         </td>
-                        <td className="px-5 py-3 text-gray-600">
-                          {assessment.coverage}%
-                        </td>
+                        <td className="px-5 py-3 text-gray-600">{assessment.coverage}%</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1170,9 +1154,7 @@ export default function HeadteacherDashboard() {
                 className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-amber-50 px-4 py-3"
               >
                 <div>
-                  <p className="text-sm font-medium text-gray-800">
-                    {request.teacher_name}
-                  </p>
+                  <p className="text-sm font-medium text-gray-800">{request.teacher_name}</p>
                   <p className="text-xs text-gray-500">{request.teacher_email}</p>
                   <p className="text-xs text-gray-400">
                     {formatDate(request.created_at.slice(0, 10))}

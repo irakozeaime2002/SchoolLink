@@ -605,7 +605,7 @@ export default function TeacherDashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
           label="Active students"
           value={data.students.length}
@@ -641,8 +641,8 @@ export default function TeacherDashboard() {
 
       {data.classes.length > 0 && (
         <>
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="dashboard-charts">
+            <section className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
               <div className="mb-4">
                 <h2 className="font-semibold text-gray-900">Performance by class</h2>
                 <p className="text-sm text-gray-500">
@@ -650,7 +650,7 @@ export default function TeacherDashboard() {
                 </p>
               </div>
               {analysis.classPerformance.some((item) => item.average !== null) ? (
-                <div className="h-72">
+                <div className="h-60">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={analysis.classPerformance}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -668,7 +668,7 @@ export default function TeacherDashboard() {
               )}
             </section>
 
-            <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+            <section className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
               <div className="mb-4">
                 <h2 className="font-semibold text-gray-900">Performance by subject</h2>
                 <p className="text-sm text-gray-500">
@@ -676,7 +676,7 @@ export default function TeacherDashboard() {
                 </p>
               </div>
               {analysis.subjectPerformance.length > 0 ? (
-                <div className="h-72">
+                <div className="h-60">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={analysis.subjectPerformance} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" horizontal={false} />
@@ -695,8 +695,8 @@ export default function TeacherDashboard() {
             </section>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="dashboard-charts">
+            <section className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
               <div className="mb-4">
                 <h2 className="font-semibold text-gray-900">Attendance trend</h2>
                 <p className="text-sm text-gray-500">
@@ -704,7 +704,7 @@ export default function TeacherDashboard() {
                 </p>
               </div>
               {analysis.attendanceTrend.length > 0 ? (
-                <div className="h-64">
+                <div className="h-56">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={analysis.attendanceTrend}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -732,7 +732,7 @@ export default function TeacherDashboard() {
               </p>
             </section>
 
-            <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+            <section className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
               <div className="mb-4">
                 <h2 className="font-semibold text-gray-900">Attendance breakdown</h2>
                 <p className="text-sm text-gray-500">
@@ -740,15 +740,15 @@ export default function TeacherDashboard() {
                 </p>
               </div>
               {analysis.attendanceBreakdown.length > 0 ? (
-                <div className="h-64">
+                <div className="h-56">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={analysis.attendanceBreakdown}
                         dataKey="value"
                         nameKey="name"
-                        innerRadius={55}
-                        outerRadius={90}
+                        innerRadius={42}
+                        outerRadius={70}
                         paddingAngle={3}
                         label
                       >
@@ -773,7 +773,7 @@ export default function TeacherDashboard() {
           </div>
 
           <section className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
-            <div className="flex items-center gap-2 border-b border-gray-100 p-5">
+            <div className="flex items-center gap-2 border-b border-gray-100 p-4">
               <AlertCircle size={18} className="text-amber-600" />
               <div>
                 <h2 className="font-semibold text-gray-900">Students needing support</h2>
@@ -810,14 +810,14 @@ export default function TeacherDashboard() {
                 </table>
               </div>
             ) : (
-              <p className="p-5 text-sm text-gray-500">
+              <p className="p-4 text-sm text-gray-500">
                 No students meet these support indicators for the selected period.
               </p>
             )}
           </section>
 
           <section className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
-            <div className="flex items-center gap-2 border-b border-gray-100 p-5">
+            <div className="flex items-center gap-2 border-b border-gray-100 p-4">
               <GraduationCap size={19} className="text-indigo-600" />
               <div>
                 <h2 className="font-semibold text-gray-900">Class overview</h2>
@@ -868,7 +868,7 @@ export default function TeacherDashboard() {
             </div>
           </section>
 
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <div className="dashboard-charts">
             <AssessmentList
               title="Upcoming assessments"
               assessments={analysis.upcomingAssessments}
@@ -881,7 +881,7 @@ export default function TeacherDashboard() {
             />
           </div>
 
-          <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+          <section className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
             <div className="mb-3 flex items-center gap-2">
               <ClipboardList size={18} className="text-sky-600" />
               <h2 className="font-semibold text-gray-900">Mark entry coverage</h2>
@@ -925,7 +925,7 @@ function AssessmentList({
   emptyMessage: string
 }) {
   return (
-    <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+    <section className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
         <ClipboardList size={18} className="text-indigo-600" />
         <h2 className="font-semibold text-gray-900">{title}</h2>
