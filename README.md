@@ -9,7 +9,7 @@
 
 **Deployed site:** [schoolmerge.vercel.app](https://schoolmerge.vercel.app)
 
-**Video Demo of our project:** [Click here to view](https://youtu.be/YLrS3XpML_A) and remember to switch to HD quality for better vison of the project.
+**Video Demo of our project:** [Click here to view](https://youtu.be/YLrS3XpML_A) and remember to switch to HD quality for better vison of the project demonstration.
 
 # SchoolLink
 
