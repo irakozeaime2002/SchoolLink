@@ -9,6 +9,8 @@
 
 **Deployed site:** [schoolmerge.vercel.app](https://schoolmerge.vercel.app)
 
+**Video Demo of our project:** [Click here to view](https://youtu.be/YLrS3XpML_A)
+
 # SchoolLink
 
 SchoolLink is a digital platform that helps schools and families follow learners’ academic progress and stay connected. Headteachers, teachers, and parents can access relevant student information, assessments, attendance, support activities, announcements, and messages in one place. The platform is designed for schools in Rwanda, with each school’s information kept within its own school context.
