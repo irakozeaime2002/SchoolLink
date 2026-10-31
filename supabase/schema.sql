@@ -1,13 +1,9 @@
 -- ============================================================
 -- SchoolLink — Supabase SQL Schema
--- Run this in: Supabase Dashboard → SQL Editor → New Query
 -- ============================================================
 
-create extension if not exists "pgcrypto";
+create extension "pgcrypto";
 
--- ============================================================
--- SCHOOLS (table only, RLS policy added after profiles)
--- ============================================================
 create table public.schools (
   id         uuid primary key default gen_random_uuid(),
   name       text not null,

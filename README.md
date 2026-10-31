@@ -23,7 +23,7 @@ SchoolLink is designed to support the Government of Rwanda’s priorities for ed
 
 Schools need reliable ways to organize learner information and follow academic progress, attendance, and support needs over time. When these records are difficult to review or share, teachers and school leaders may have less visibility into learner progress, and families may find it harder to stay informed and coordinate with the school.
 
-The education reports and statistical yearbook in the `data/` folder provide national-level context about Rwanda’s education sector. They do not, on their own, establish how individual schools manage records or communicate with families. SchoolLink addresses that school-level need by bringing student information, marks, attendance, interventions, announcements, and messages together in one platform.
+The education reports and statistical yearbook on [NISR site](https://statistics.gov.rw/statistical-publications/statistical-yearbook/rwanda-statistical-yearbook-2024) provide national-level context about Rwanda’s education sector. They do not, on their own, establish how individual schools manage records or communicate with families. SchoolLink addresses that school-level need by bringing student information, marks, attendance, interventions, announcements, and messages together in one platform.
 
 The intended outcome is to make relevant information easier for school staff and families to access and to support more coordinated learner support. These are project goals; the platform’s impact should be assessed through its use in schools.
 
@@ -33,7 +33,7 @@ The intended outcome is to make relevant information easier for school staff and
 
 SchoolLink uses Supabase for authentication and to store the records displayed in the application. These records include schools, user profiles and roles, academic years, classes, subjects, students, assessments, marks, attendance, announcements, messages, and interventions.
 
-The Excel workbooks in the `data/` folder provide education-sector reference material. The application does not currently import those workbooks to populate its dashboards. Dashboard information comes from the school records stored in Supabase. During development, the project’s seed script can also create sample records for testing.
+The Excel workbook in the `data/` folder contains sample seed data used to test and demonstrate the SchoolLink platform. The data provides a consistent example for reviewing the platform’s functionality; all names in the workbook are fictional and do not represent real individuals.
 
 ### What the dashboards communicate
 
