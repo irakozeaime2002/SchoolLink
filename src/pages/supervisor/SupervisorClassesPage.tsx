@@ -48,15 +48,22 @@ export default function SupervisorClassesPage() {
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm divide-y divide-gray-100">
           {classes.map(c => (
-            <div key={c.id} className="flex items-center justify-between px-5 py-4">
-              <div>
-                <p className="font-medium text-gray-800">{c.name}</p>
-                <p className="text-xs text-gray-500">{c.teacher_name ?? 'No class teacher assigned'}</p>
-              </div>
-              <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-                {c.student_count} student{c.student_count !== 1 ? 's' : ''}
-              </span>
-            </div>
+            <button
+  key={c.id}
+  type="button"
+  onClick={() => navigate(`/supervisor/classes/${c.id}`)}
+  className="flex w-full items-center justify-between px-5 py-4 text-left hover:bg-gray-50"
+>
+  <div>
+    <p className="font-medium text-gray-800">{c.name}</p>
+    <p className="text-xs text-gray-500">
+      {c.teacher_name ?? 'No class teacher assigned'}
+    </p>
+  </div>
+  <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+    {c.student_count} student{c.student_count !== 1 ? 's' : ''}
+  </span>
+</button>
           ))}
         </div>
       )}

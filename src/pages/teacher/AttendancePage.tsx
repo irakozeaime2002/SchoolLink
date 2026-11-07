@@ -139,8 +139,6 @@ export default function AttendancePage() {
     const absentOrLate = students
     if (absentOrLate.length === 0) { setAlertResult('No students to alert.'); return }
     setAlerting(true); setAlertResult('')
-    const { data: { session } } = await supabase.auth.getSession()
-    const token = session?.access_token
     // Get parent IDs for these students
     const studentIds = absentOrLate.map(s => s.id)
     const { data: links } = await supabase.from('parent_students').select('parent_id, student_id').in('student_id', studentIds)

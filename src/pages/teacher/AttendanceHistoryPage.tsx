@@ -9,7 +9,7 @@ const badgeVariant: Record<Status, 'green' | 'red' | 'yellow' | 'blue'> = {
   present: 'green', absent: 'red', late: 'yellow', excused: 'blue',
 }
 
-interface Record {
+interface AttendanceRecord {
   id: string
   date: string
   student_name: string
@@ -29,8 +29,9 @@ export default function AttendanceHistoryPage() {
   const [selectedClass, setSelectedClass] = useState('')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
-  const [records, setRecords] = useState<Record[]>([])
+  const [records, setRecords] = useState<AttendanceRecord[]>([])
   const [loading, setLoading] = useState(false)
+  //const [records, setRecords] = useState<AttendanceRecord[]>([])
 
   useEffect(() => {
     if (!classesLoading && classes.length > 0 && !selectedClass) {

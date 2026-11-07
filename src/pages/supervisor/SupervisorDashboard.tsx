@@ -12,9 +12,12 @@ interface LessonPlan {
   file_name: string
   plan_date: string | null
   teacher_id: string
-  subjects: { name: string } | null
-  profiles: { full_name: string } | null
-  lesson_plan_classes: { class_id: string; classes: { name: string } | null }[]
+ subjects: { name: string }[] | null
+profiles: { full_name: string }[] | null
+lesson_plan_classes: {
+  class_id: string
+  classes: { name: string }[] | null
+}[]
 }
 
 interface ClassRow { id: string; name: string }
@@ -178,10 +181,10 @@ export default function SupervisorDashboard() {
                       <p className="font-medium text-gray-800">{p.title}</p>
                       {p.description && <p className="text-sm text-gray-500 mt-0.5">{p.description}</p>}
                       <div className="flex flex-wrap gap-2 mt-1">
-                        {p.profiles && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{p.profiles.full_name}</span>}
-                        {p.subjects && <span className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full">{p.subjects.name}</span>}
+                        {p.profiles && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{p.profiles?.[0]?.full_name}</span>}
+                        {p.subjects && <span className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full">{p.subjects?.[0]?.name}</span>}
                         {p.lesson_plan_classes?.map(lpc => (
-                          <span key={lpc.class_id} className="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full">{lpc.classes?.name}</span>
+                          <span key={lpc.class_id} className="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full">{lpc.classes?.[0]?.name}</span>
                         ))}
                         {p.plan_date && <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full">{p.plan_date}</span>}
                         <span className="text-xs text-gray-400">{p.file_name}</span>
