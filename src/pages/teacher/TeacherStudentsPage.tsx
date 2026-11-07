@@ -1,4 +1,4 @@
-import { GraduationCap, Pencil, Plus, Trash2 } from 'lucide-react'
+import { GraduationCap, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { MouseEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -10,6 +10,7 @@ import { supabase } from '../../lib/supabase'
 interface MyClass {
   id: string
   name: string
+  isOwn: boolean // true = class teacher, false = subject teacher only
 }
 
 interface Student {
@@ -21,6 +22,7 @@ interface Student {
   class_name: string
   guardian_name: string | null
   guardian_phone: string | null
+  guardian_email: string | null
 }
 
 const emptyForm = {
@@ -29,6 +31,7 @@ const emptyForm = {
   class_id: '',
   guardian_name: '',
   guardian_phone: '',
+  guardian_email: '',
 }
 
 export default function TeacherStudentsPage() {
@@ -36,6 +39,7 @@ export default function TeacherStudentsPage() {
   const navigate = useNavigate()
 
   const [myClasses, setMyClasses] = useState<MyClass[]>([])
+  const [ownClassIds, setOwnClassIds] = useState<Set<string>>(new Set())
   const [students, setStudents] = useState<Student[]>([])
   const [loading, setLoading] = useState(true)
   const [pageError, setPageError] = useState('')
@@ -46,6 +50,9 @@ export default function TeacherStudentsPage() {
   const [formError, setFormError] = useState('')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [search, setSearch] = useState('')
+  const [filterClass, setFilterClass] = useState('')
+  const [filterStatus, setFilterStatus] = useState('')
 
   useEffect(() => {
     if (user?.id) {
@@ -61,22 +68,40 @@ export default function TeacherStudentsPage() {
     setLoading(true)
     setPageError('')
 
-    const { data: classRows, error: classError } = await supabase
+    // Classes where this teacher is the class teacher
+    const { data: ownRows, error: ownError } = await supabase
       .from('classes')
       .select('id, name')
       .eq('teacher_id', user.id)
       .order('name')
 
-    if (classError) {
-      setPageError(`Could not load your classes: ${classError.message}`)
+    if (ownError) {
+      setPageError(`Could not load your classes: ${ownError.message}`)
       setMyClasses([])
       setStudents([])
       setLoading(false)
       return
     }
 
-    const classes = classRows ?? []
+    // Classes where this teacher teaches a subject
+    const { data: subjectRows } = await supabase
+      .from('class_subjects')
+      .select('class_id, classes(id, name)')
+      .eq('teacher_id', user.id)
+
+    const ownIds = new Set((ownRows ?? []).map((c) => c.id))
+    const allClassMap = new Map<string, string>()
+    ;(ownRows ?? []).forEach((c) => allClassMap.set(c.id, c.name))
+    ;(subjectRows ?? []).forEach((r: any) => {
+      if (r.classes) allClassMap.set(r.classes.id, r.classes.name)
+    })
+
+    const classes: MyClass[] = [...allClassMap.entries()]
+      .map(([id, name]) => ({ id, name, isOwn: ownIds.has(id) }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+
     setMyClasses(classes)
+    setOwnClassIds(ownIds)
 
     if (classes.length === 0) {
       setStudents([])
@@ -87,7 +112,7 @@ export default function TeacherStudentsPage() {
     const classIds = classes.map((classRow) => classRow.id)
     const { data: studentRows, error: studentError } = await supabase
       .from('students')
-      .select('id, full_name, date_of_birth, status, class_id, guardian_name, guardian_phone')
+      .select('id, full_name, date_of_birth, status, class_id, guardian_name, guardian_phone, guardian_email')
       .in('class_id', classIds)
       .order('full_name')
 
@@ -110,14 +135,24 @@ export default function TeacherStudentsPage() {
         class_name: classNames.get(student.class_id) ?? '—',
         guardian_name: student.guardian_name,
         guardian_phone: student.guardian_phone,
+        guardian_email: student.guardian_email,
       })),
     )
     setLoading(false)
   }
 
+  const ownClasses = myClasses.filter((c) => c.isOwn)
+
+  const filtered = students.filter((s) => {
+    const matchName = s.full_name.toLowerCase().includes(search.toLowerCase())
+    const matchClass = filterClass ? s.class_id === filterClass : true
+    const matchStatus = filterStatus ? s.status === filterStatus : true
+    return matchName && matchClass && matchStatus
+  })
+
   function openAdd() {
     setEditStudent(null)
-    setForm({ ...emptyForm, class_id: myClasses[0]?.id ?? '' })
+    setForm({ ...emptyForm, class_id: ownClasses[0]?.id ?? '' })
     setFormError('')
     setOpen(true)
   }
@@ -131,6 +166,7 @@ export default function TeacherStudentsPage() {
       class_id: student.class_id,
       guardian_name: student.guardian_name ?? '',
       guardian_phone: student.guardian_phone ?? '',
+      guardian_email: student.guardian_email ?? '',
     })
     setFormError('')
     setOpen(true)
@@ -157,12 +193,18 @@ export default function TeacherStudentsPage() {
     setSaving(true)
     setFormError('')
 
+    const guardianPhone = form.guardian_phone.trim() || null
+    const guardianEmail = form.guardian_email.trim() || null
+    const guardianName = form.guardian_name.trim() || null
+    const { data: { session } } = await supabase.auth.getSession()
+
     const studentValues = {
       full_name: form.full_name.trim(),
       date_of_birth: form.date_of_birth || null,
       class_id: form.class_id,
-      guardian_name: form.guardian_name.trim() || null,
-      guardian_phone: form.guardian_phone.trim() || null,
+      guardian_name: guardianName,
+      guardian_phone: guardianPhone,
+      guardian_email: guardianEmail,
     }
 
     if (editStudent) {
@@ -175,33 +217,39 @@ export default function TeacherStudentsPage() {
 
       setSaving(false)
 
-      if (error) {
-        setFormError(`Could not update student: ${error.message}`)
-        return
-      }
+      if (error) { setFormError(`Could not update student: ${error.message}`); return }
+      if (!data) { setFormError('Student was not updated. Check that they are still in your class.'); return }
 
-      if (!data) {
-        setFormError('Student was not updated. Check that they are still in your class.')
-        return
+      if (guardianPhone || guardianEmail) {
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-parent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+          body: JSON.stringify({ student_id: editStudent.id, guardian_name: guardianName, guardian_phone: guardianPhone, guardian_email: guardianEmail }),
+        })
+        const json = await res.json()
+        if (!res.ok) { setFormError(`Parent account error: ${json.error}`); setSaving(false); return }
       }
     } else {
-      if (!user?.school_id) {
-        setSaving(false)
-        setFormError('Your account is not linked to a school.')
-        return
-      }
+      if (!user?.school_id) { setSaving(false); setFormError('Your account is not linked to a school.'); return }
 
-      const { error } = await supabase.from('students').insert({
+      const { data: student, error } = await supabase.from('students').insert({
         ...studentValues,
         school_id: user.school_id,
         status: 'active',
-      })
+      }).select('id').single()
 
       setSaving(false)
 
-      if (error) {
-        setFormError(`Could not add student: ${error.message}`)
-        return
+      if (error) { setFormError(`Could not add student: ${error.message}`); return }
+
+      if ((guardianPhone || guardianEmail) && student?.id) {
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-parent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+          body: JSON.stringify({ student_id: student.id, guardian_name: guardianName, guardian_phone: guardianPhone, guardian_email: guardianEmail }),
+        })
+        const json = await res.json()
+        if (!res.ok) { setFormError(`Parent account error: ${json.error}`); setSaving(false); return }
       }
     }
 
@@ -244,11 +292,11 @@ export default function TeacherStudentsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">My Students</h1>
           <p className="mt-1 text-sm text-gray-500">
-            {students.length} students in your class(es)
+            {filtered.length} of {students.length} students
           </p>
         </div>
 
-        {myClasses.length > 0 && (
+        {ownClasses.length > 0 && (
           <button
             type="button"
             onClick={openAdd}
@@ -260,6 +308,33 @@ export default function TeacherStudentsPage() {
         )}
       </div>
 
+      {!loading && students.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          <div className="relative flex-1 min-w-40">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name…"
+              className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          <select value={filterClass} onChange={(e) => setFilterClass(e.target.value)}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="">All classes</option>
+            {myClasses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="">All statuses</option>
+            <option value="active">Active</option>
+            <option value="transferred">Transferred</option>
+            <option value="graduated">Graduated</option>
+          </select>
+        </div>
+      )}
+
       {pageError && (
         <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
           {pageError}
@@ -270,12 +345,12 @@ export default function TeacherStudentsPage() {
         <p className="text-sm text-gray-400">Loading…</p>
       ) : myClasses.length === 0 ? (
         <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-800">
-          You are not assigned as a class teacher. Ask your headteacher to assign you to a class.
+          You are not assigned to any classes yet. Ask your headteacher to assign you.
         </div>
       ) : students.length === 0 ? (
         <div className="py-16 text-center text-gray-400">
           <GraduationCap size={40} className="mx-auto mb-3 opacity-40" />
-          <p>No students yet. Add your first student.</p>
+          <p>No students found in your classes.</p>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white shadow-sm">
@@ -291,7 +366,9 @@ export default function TeacherStudentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {students.map((student) => (
+              {filtered.length === 0 ? (
+                <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-gray-400">No students match your filters.</td></tr>
+              ) : filtered.map((student) => (
                 <tr
                   key={student.id}
                   className="cursor-pointer hover:bg-gray-50"
@@ -323,28 +400,32 @@ export default function TeacherStudentsPage() {
                     />
                   </td>
                   <td className="px-5 py-3">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        aria-label={`Edit ${student.full_name}`}
-                        onClick={(event) => openEdit(student, event)}
-                        className="rounded-lg p-1.5 text-gray-400 hover:bg-indigo-50 hover:text-indigo-600"
-                      >
-                        <Pencil size={15} />
-                      </button>
-                      <button
-                        type="button"
-                        aria-label={`Delete ${student.full_name}`}
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          setFormError('')
-                          setDeleteStudent(student)
-                        }}
-                        className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
+                    {ownClassIds.has(student.class_id) ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          aria-label={`Edit ${student.full_name}`}
+                          onClick={(event) => openEdit(student, event)}
+                          className="rounded-lg p-1.5 text-gray-400 hover:bg-indigo-50 hover:text-indigo-600"
+                        >
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Delete ${student.full_name}`}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            setFormError('')
+                            setDeleteStudent(student)
+                          }}
+                          className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-300">View only</span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -391,7 +472,7 @@ export default function TeacherStudentsPage() {
                 }
                 className="input"
               >
-                {myClasses.map((classRow) => (
+                {ownClasses.map((classRow) => (
                   <option key={classRow.id} value={classRow.id}>
                     {classRow.name}
                   </option>
@@ -441,6 +522,22 @@ export default function TeacherStudentsPage() {
                 className="input"
                 placeholder="+250 788 000 000"
               />
+            </label>
+
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium text-gray-700">
+                Guardian Email <span className="text-gray-400 font-normal">(used to log in)</span>
+              </span>
+              <input
+                type="email"
+                value={form.guardian_email}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, guardian_email: event.target.value }))
+                }
+                className="input"
+                placeholder="parent@example.com"
+              />
+              <p className="text-xs text-gray-400 mt-1">If provided, a parent account is created with default password <span className="font-mono">123456</span>.</p>
             </label>
 
             <div className="flex justify-end gap-2 pt-2">

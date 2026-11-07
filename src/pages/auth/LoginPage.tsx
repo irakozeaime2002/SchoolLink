@@ -125,6 +125,16 @@ export default function LoginPage() {
           </button>
         </div>
 
+        <div className="mt-3 text-center">
+          <button
+            type="button"
+            onClick={() => navigate('/supervisor/login')}
+            className="text-xs text-indigo-500 hover:underline"
+          >
+            Supervisor? Enter access code →
+          </button>
+        </div>
+
         <form className="login-form" onSubmit={handleSubmit}>
           {(error || loginError) && (
             <div className="login-message login-error" role="alert">

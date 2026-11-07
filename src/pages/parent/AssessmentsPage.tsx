@@ -1,11 +1,9 @@
 import { CalendarClock, ClipboardCheck } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import Badge, { type BadgeVariant } from '../../components/ui/Badge'
-import { useAuth } from '../../context/AuthContext'
+import { useChild } from '../../context/ChildContext'
 import { assessmentTypeLabel, assessmentTypeVariant, formatAssessmentDate, todayISO } from '../../lib/assessments'
 import { supabase } from '../../lib/supabase'
-
-interface ChildOption { id: string; full_name: string; class_id: string; class_name: string }
 
 interface ChildAssessment {
   id: string
@@ -22,41 +20,20 @@ function scoreVariant(pct: number): BadgeVariant {
 }
 
 export default function ParentAssessmentsPage() {
-  const { user } = useAuth()
-  const userId = user?.id
-  const [children, setChildren] = useState<ChildOption[]>([])
-  const [childId, setChildId] = useState('')
+  const { children, activeChild, setActiveChild, loading: childLoading } = useChild()
   const [items, setItems] = useState<ChildAssessment[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!userId) return
-    async function loadChildren() {
-      const { data: links } = await supabase.from('parent_students').select('student_id').eq('parent_id', userId!)
-      const ids = (links ?? []).map((l: any) => l.student_id)
-      if (ids.length === 0) { setLoading(false); return }
-      const { data } = await supabase.from('students').select('id, full_name, class_id, classes(name)').in('id', ids)
-      const list: ChildOption[] = (data ?? []).map((s: any) => ({
-        id: s.id, full_name: s.full_name, class_id: s.class_id, class_name: s.classes?.name ?? '—',
-      }))
-      setChildren(list)
-      setChildId(list[0]?.id ?? '')
-      if (list.length === 0) setLoading(false)
-    }
-    loadChildren()
-  }, [userId])
-
-  const child = children.find((c) => c.id === childId)
-
-  useEffect(() => {
-    if (!child) return
+    if (!activeChild) return
     let cancelled = false
     async function loadAssessments() {
+      setItems([])
       setLoading(true)
       const [{ data: assessments }, { data: marks }] = await Promise.all([
         supabase.from('assessments').select('id, title, type, date, max_score, subjects(name)')
-          .eq('class_id', child!.class_id).order('date', { ascending: false }),
-        supabase.from('marks').select('assessment_id, score').eq('student_id', child!.id),
+          .eq('class_id', activeChild!.class_id).order('date', { ascending: false }),
+        supabase.from('marks').select('assessment_id, score').eq('student_id', activeChild!.student_id),
       ])
       if (cancelled) return
       const scoreById = Object.fromEntries((marks ?? []).map((m: any) => [m.assessment_id, Number(m.score)]))
@@ -68,7 +45,7 @@ export default function ParentAssessmentsPage() {
     }
     loadAssessments()
     return () => { cancelled = true }
-  }, [child])
+  }, [activeChild])
 
   const { upcoming, past } = useMemo(() => {
     const today = todayISO()
@@ -78,24 +55,30 @@ export default function ParentAssessmentsPage() {
     }
   }, [items])
 
+  if (childLoading) return <div className="text-center py-20 text-gray-400">Loading…</div>
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Assessments</h1>
           <p className="text-gray-500 text-sm mt-1">
-            {child ? `${child.full_name} · ${child.class_name}` : 'Quizzes, tests and assignments for your child'}
+            {activeChild ? `${activeChild.full_name} · ${activeChild.class_name}` : 'Quizzes, tests and assignments for your child'}
           </p>
         </div>
         {children.length > 1 && (
-          <select
-            aria-label="Choose child"
-            value={childId}
-            onChange={(e) => setChildId(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            {children.map((c) => <option key={c.id} value={c.id}>{c.full_name}</option>)}
-          </select>
+          <div className="flex gap-2 flex-wrap">
+            {children.map(c => (
+              <button key={c.student_id} onClick={() => setActiveChild(c)}
+                className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+                  activeChild?.student_id === c.student_id
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                }`}>
+                {c.full_name}
+              </button>
+            ))}
+          </div>
         )}
       </div>
 
@@ -105,9 +88,9 @@ export default function ParentAssessmentsPage() {
         </div>
       )}
 
-      {loading && children.length > 0 && <p className="text-sm text-gray-400">Loading…</p>}
+      {loading && <p className="text-sm text-gray-400">Loading…</p>}
 
-      {!loading && child && (
+      {!loading && activeChild && (
         <>
           <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <h2 className="text-base font-semibold text-gray-800 mb-3">Upcoming</h2>

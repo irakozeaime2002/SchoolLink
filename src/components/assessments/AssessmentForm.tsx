@@ -38,7 +38,8 @@ export default function AssessmentForm({ classes, terms, defaultClassId, onCreat
   const { user } = useAuth()
   const id = useId()
   const [title, setTitle] = useState('')
-  const [type, setType] = useState<AssessmentType>('test')
+  const [type, setType] = useState<AssessmentType | 'other'>('test')
+  const [customType, setCustomType] = useState('')
   const [classId, setClassId] = useState(defaultClassId ?? classes[0]?.id ?? '')
   const [subjectId, setSubjectId] = useState('')
   const [date, setDate] = useState(todayISO())
@@ -58,46 +59,33 @@ export default function AssessmentForm({ classes, terms, defaultClassId, onCreat
   const [submitError, setSubmitError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  // Subjects this teacher can assess in the selected class
+  // Subjects this teacher teaches in the selected class
   useEffect(() => {
     if (!classId || !user) return
     let cancelled = false
-    const selectedClass = classes.find((c) => c.id === classId)
 
     async function loadSubjects() {
       setSubjectsLoading(true)
       const { data } = await supabase
         .from('class_subjects')
-        .select('teacher_id, subjects(id, name)')
+        .select('subjects(id, name)')
         .eq('class_id', classId)
-
-      let list = (data ?? [])
-        .filter((row: any) => selectedClass?.isClassTeacher || row.teacher_id === user!.id)
-        .map((row: any) => row.subjects)
-        .filter(Boolean) as { id: string; name: string }[]
-
-      // No subjects mapped to the class yet: fall back to the school's subject list
-      if (list.length === 0 && user!.school_id) {
-        const { data: schoolSubjects } = await supabase
-          .from('subjects')
-          .select('id, name')
-          .eq('school_id', user!.school_id)
-          .order('name')
-        list = schoolSubjects ?? []
-      }
+        .eq('teacher_id', user!.id)
 
       if (cancelled) return
-      list.sort((a, b) => a.name.localeCompare(b.name))
+      const seen = new Map<string, string>()
+      ;(data ?? []).forEach((row: any) => { if (row.subjects) seen.set(row.subjects.id, row.subjects.name) })
+      const list = Array.from(seen.entries())
+        .map(([id, name]) => ({ id, name }))
+        .sort((a, b) => a.name.localeCompare(b.name))
       setSubjects(list)
       setSubjectId((current) => (list.some((s) => s.id === current) ? current : list[0]?.id ?? ''))
       setSubjectsLoading(false)
     }
 
     loadSubjects()
-    return () => {
-      cancelled = true
-    }
-  }, [classId, classes, user])
+    return () => { cancelled = true }
+  }, [classId, user])
 
   function validate(): FieldErrors {
     const next: FieldErrors = {}
@@ -106,6 +94,7 @@ export default function AssessmentForm({ classes, terms, defaultClassId, onCreat
     if (!subjectId) next.subjectId = 'Choose a subject.'
     if (!termId) next.termId = 'Choose a term.'
     if (!date) next.date = 'Choose a date.'
+    if (type === 'other' && !customType.trim()) next.title = 'Enter a custom type name.'
     const max = Number(maxScore)
     if (!maxScore || Number.isNaN(max) || max <= 0) next.maxScore = 'Enter a score greater than 0.'
     return next
@@ -132,7 +121,7 @@ export default function AssessmentForm({ classes, terms, defaultClassId, onCreat
         term_id: termId,
         teacher_id: user.id,
         title: title.trim(),
-        type,
+        type: type === 'other' ? customType.trim() : type,
         max_score: Number(maxScore),
         date,
       })
@@ -201,7 +190,36 @@ export default function AssessmentForm({ classes, terms, defaultClassId, onCreat
               </span>
             </label>
           ))}
+          <label className="cursor-pointer">
+            <input
+              type="radio"
+              name={`${id}-type`}
+              value="other"
+              checked={type === 'other'}
+              onChange={() => setType('other')}
+              className="peer sr-only"
+            />
+            <span
+              className={clsx(
+                'inline-block px-3 py-1.5 rounded-lg border text-sm transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-300',
+                type === 'other'
+                  ? 'border-indigo-600 bg-indigo-600 text-white'
+                  : 'border-gray-200 text-gray-600 hover:border-indigo-300',
+              )}
+            >
+              Other
+            </span>
+          </label>
         </div>
+        {type === 'other' && (
+          <input
+            value={customType}
+            onChange={(e) => setCustomType(e.target.value)}
+            placeholder="e.g. Oral presentation"
+            className="input mt-2"
+            autoFocus
+          />
+        )}
       </fieldset>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -233,7 +251,7 @@ export default function AssessmentForm({ classes, terms, defaultClassId, onCreat
             className="input disabled:bg-gray-50"
           >
             {subjectsLoading && <option value="">Loading…</option>}
-            {!subjectsLoading && subjects.length === 0 && <option value="">No subjects found</option>}
+            {!subjectsLoading && subjects.length === 0 && <option value="">No subjects assigned to you in this class</option>}
             {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
           {fieldError('subjectId')}

@@ -15,11 +15,12 @@ interface Student {
   status: string
   guardian_name: string | null
   guardian_phone: string | null
+  guardian_email: string | null
 }
 
 interface ClassOption { id: string; name: string }
 
-const emptyForm = { full_name: '', class_id: '', date_of_birth: '', status: 'active', guardian_name: '', guardian_phone: '' }
+const emptyForm = { full_name: '', class_id: '', date_of_birth: '', status: 'active', guardian_name: '', guardian_phone: '', guardian_email: '' }
 
 export default function StudentsPage() {
   const { user } = useAuth()
@@ -42,7 +43,7 @@ export default function StudentsPage() {
     const [{ data }, { data: cls }] = await Promise.all([
       supabase
         .from('students')
-        .select('id, full_name, class_id, date_of_birth, status, guardian_name, guardian_phone')
+        .select('id, full_name, class_id, date_of_birth, status, guardian_name, guardian_phone, guardian_email')
         .eq('school_id', user.school_id)
         .order('full_name'),
       supabase
@@ -83,6 +84,7 @@ export default function StudentsPage() {
       status: s.status,
       guardian_name: s.guardian_name ?? '',
       guardian_phone: s.guardian_phone ?? '',
+      guardian_email: s.guardian_email ?? '',
     })
     setFormError('')
     setOpen(true)
@@ -95,47 +97,51 @@ export default function StudentsPage() {
     }
     setSaving(true)
 
+    const guardianPhone = form.guardian_phone.trim() || null
+    const guardianEmail = form.guardian_email.trim() || null
+    const guardianName = form.guardian_name.trim() || null
+    const { data: { session } } = await supabase.auth.getSession()
+
     if (editStudent) {
-      // Edit
       const { error } = await supabase.from('students').update({
         full_name: form.full_name.trim(),
         class_id: form.class_id,
         date_of_birth: form.date_of_birth || null,
         status: form.status,
-        guardian_name: form.guardian_name.trim() || null,
-        guardian_phone: form.guardian_phone.trim() || null,
+        guardian_name: guardianName,
+        guardian_phone: guardianPhone,
+        guardian_email: guardianEmail,
       }).eq('id', editStudent.id)
       if (error) { setFormError(error.message); setSaving(false); return }
+      if (guardianPhone || guardianEmail) {
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-parent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+          body: JSON.stringify({ student_id: editStudent.id, guardian_name: guardianName, guardian_phone: guardianPhone, guardian_email: guardianEmail }),
+        })
+        const json = await res.json()
+        if (!res.ok) { setFormError(`Parent account error: ${json.error}`); setSaving(false); return }
+      }
     } else {
-      // Add
       const { data: student, error } = await supabase.from('students').insert({
         school_id: user!.school_id,
         full_name: form.full_name.trim(),
         class_id: form.class_id,
         date_of_birth: form.date_of_birth || null,
         status: form.status,
-        guardian_name: form.guardian_name.trim() || null,
-        guardian_phone: form.guardian_phone.trim() || null,
+        guardian_name: guardianName,
+        guardian_phone: guardianPhone,
+        guardian_email: guardianEmail,
       }).select('id').single()
       if (error) { setFormError(error.message); setSaving(false); return }
-
-      // Auto-create or link parent — non-blocking
-      if (form.guardian_phone.trim() && student?.id) {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-          fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-parent`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session?.access_token}`,
-              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            },
-            body: JSON.stringify({
-              student_id: student.id,
-              guardian_name: form.guardian_name.trim() || null,
-              guardian_phone: form.guardian_phone.trim(),
-            }),
-          }).catch(() => {})
+      if ((guardianPhone || guardianEmail) && student?.id) {
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-parent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+          body: JSON.stringify({ student_id: student.id, guardian_name: guardianName, guardian_phone: guardianPhone, guardian_email: guardianEmail }),
         })
+        const json = await res.json()
+        if (!res.ok) { setFormError(`Parent account error: ${json.error}`); setSaving(false); return }
       }
     }
 
@@ -269,6 +275,12 @@ export default function StudentsPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Guardian Phone</label>
               <input type="text" value={form.guardian_phone} onChange={(e) => setForm((p) => ({ ...p, guardian_phone: e.target.value }))}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="+250 788 000 000" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Guardian Email <span className="text-gray-400 font-normal">(used to log in)</span></label>
+              <input type="email" value={form.guardian_email} onChange={(e) => setForm((p) => ({ ...p, guardian_email: e.target.value }))}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="parent@example.com" />
+              <p className="text-xs text-gray-400 mt-1">If provided, a parent account is created with default password <span className="font-mono">123456</span>.</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>

@@ -17,44 +17,53 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    // Verify caller is headteacher
     const token = authHeader.replace('Bearer ', '')
     const { data: { user }, error: userError } = await adminClient.auth.getUser(token)
     if (userError || !user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders })
 
-    const { data: caller } = await adminClient.from('profiles').select('role').eq('id', user.id).single()
-    if (!caller || caller.role !== 'headteacher') {
+    const { data: caller } = await adminClient.from('profiles').select('role, school_id').eq('id', user.id).single()
+    if (!caller || !['headteacher', 'teacher'].includes(caller.role)) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: corsHeaders })
     }
 
-    const { student_id, guardian_name, guardian_phone } = await req.json()
-    if (!student_id || !guardian_phone) {
-      return new Response(JSON.stringify({ error: 'student_id and guardian_phone are required' }), { status: 400, headers: corsHeaders })
+    const { student_id, guardian_name, guardian_phone, guardian_email } = await req.json()
+    if (!student_id) return new Response(JSON.stringify({ error: 'student_id is required' }), { status: 400, headers: corsHeaders })
+
+    const phone = guardian_phone?.trim() || null
+    const email = guardian_email?.trim().toLowerCase() || null
+    if (!phone && !email) {
+      return new Response(JSON.stringify({ error: 'guardian_phone or guardian_email required' }), { status: 400, headers: corsHeaders })
     }
 
-    // Normalize phone
-    const phone = guardian_phone.trim()
+    // Login email: use real email if given, else derive from phone
+    const loginEmail = email ?? `${phone!.replace(/[^a-zA-Z0-9]/g, '')}@schoollink.app`
 
-    // Check if parent account already exists with this phone
-    const { data: existingProfile } = await adminClient
-      .from('profiles')
-      .select('id')
-      .eq('phone', phone)
-      .eq('role', 'parent')
-      .single()
+    // Look up existing parent — by phone OR by login email stored in auth.users
+    let parentId: string | null = null
 
-    let parentId: string
+    // 1. Try phone lookup in profiles
+    if (phone) {
+      const { data } = await adminClient.from('profiles').select('id').eq('phone', phone).eq('role', 'parent').maybeSingle()
+      if (data) parentId = data.id
+    }
 
-    if (existingProfile) {
-      // Parent already exists — just reuse
-      parentId = existingProfile.id
+    // 2. Try email lookup via auth admin (single user, not full scan)
+    if (!parentId) {
+      const { data: authData } = await adminClient.auth.admin.getUserByEmail(loginEmail)
+      if (authData?.user) parentId = authData.user.id
+    }
+
+    if (parentId) {
+      // Existing parent found — just update and link, never create duplicate
+      await adminClient.from('profiles').update({
+        ...(guardian_name ? { full_name: guardian_name } : {}),
+        ...(phone ? { phone } : {}),
+        school_id: caller.school_id,
+      }).eq('id', parentId)
     } else {
-      // Create new auth user — use phone as email base
-      const sanitized = phone.replace(/[^a-zA-Z0-9]/g, '')
-      const email = `${sanitized}@schoollink.app`
-
+      // No existing parent — create new auth user + profile
       const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
-        email,
+        email: loginEmail,
         password: '123456',
         email_confirm: true,
         user_metadata: { full_name: guardian_name ?? 'Parent', role: 'parent' },
@@ -67,20 +76,20 @@ Deno.serve(async (req) => {
         id: parentId,
         full_name: guardian_name ?? 'Parent',
         role: 'parent',
-        school_id: null,
+        school_id: caller.school_id,
         phone,
         must_change_password: true,
       })
     }
 
-    // Link parent to student (ignore if already linked)
+    // Link parent to student (upsert — safe to call multiple times)
     const { error: linkError } = await adminClient
       .from('parent_students')
       .upsert({ parent_id: parentId, student_id }, { onConflict: 'parent_id,student_id' })
 
     if (linkError) return new Response(JSON.stringify({ error: linkError.message }), { status: 400, headers: corsHeaders })
 
-    return new Response(JSON.stringify({ success: true, parent_id: parentId }), { status: 200, headers: corsHeaders })
+    return new Response(JSON.stringify({ success: true, parent_id: parentId, login_email: loginEmail }), { status: 200, headers: corsHeaders })
   } catch (e) {
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: corsHeaders })
   }

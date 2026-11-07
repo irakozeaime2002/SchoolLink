@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { CalendarCheck } from 'lucide-react'
 import Badge from '../../components/ui/Badge'
-import { useAuth } from '../../context/AuthContext'
+import { useChild } from '../../context/ChildContext'
 import { supabase } from '../../lib/supabase'
 
 type Status = 'present' | 'absent' | 'late' | 'excused'
@@ -10,41 +10,19 @@ const statusVariant: Record<Status, 'green' | 'red' | 'yellow' | 'blue'> = {
 }
 
 export default function ParentAttendancePage() {
-  const { user } = useAuth()
-  const [child, setChild] = useState<any>(null)
+  const { activeChild, children, setActiveChild, loading: childLoading } = useChild()
   const [records, setRecords] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!user?.id) return
-    async function load() {
-      const { data: link } = await supabase
-        .from('parent_students')
-        .select('student_id')
-        .eq('parent_id', user!.id)
-        .limit(1)
-        .single()
-
-      if (!link) { setLoading(false); return }
-
-      const { data: studentData } = await supabase
-        .from('students')
-        .select('full_name, classes(name)')
-        .eq('id', link.student_id)
-        .single()
-      setChild(studentData)
-
-      const { data: att } = await supabase
-        .from('attendance')
-        .select('date, status, note')
-        .eq('student_id', link.student_id)
-        .order('date', { ascending: false })
-
-      setRecords(att ?? [])
-      setLoading(false)
-    }
-    load()
-  }, [user])
+    if (!activeChild) return
+    setRecords([])
+    setLoading(true)
+    supabase.from('attendance').select('date, status, note')
+      .eq('student_id', activeChild.student_id)
+      .order('date', { ascending: false })
+      .then(({ data }) => { setRecords(data ?? []); setLoading(false) })
+  }, [activeChild])
 
   const present = records.filter((r) => r.status === 'present').length
   const absent = records.filter((r) => r.status === 'absent').length
@@ -53,28 +31,46 @@ export default function ParentAttendancePage() {
   const total = records.length
   const rate = total > 0 ? Math.round(((present + excused) / total) * 100) : null
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading…</div>
+  if (childLoading) return <div className="text-center py-20 text-gray-400">Loading…</div>
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">{child ? `${child.full_name}'s Attendance` : 'Attendance'}</h1>
-        <p className="text-gray-500 text-sm mt-1">{child?.classes?.name ?? '—'}</p>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{activeChild ? `${activeChild.full_name}'s Attendance` : 'Attendance'}</h1>
+          <p className="text-gray-500 text-sm mt-1">{activeChild?.class_name ?? '—'}</p>
+        </div>
+        {children.length > 1 && (
+          <div className="flex gap-2 flex-wrap">
+            {children.map(c => (
+              <button key={c.student_id} onClick={() => setActiveChild(c)}
+                className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+                  activeChild?.student_id === c.student_id
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                }`}>
+                {c.full_name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {!child && (
+      {!activeChild && (
         <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 text-sm text-indigo-800">
           No child linked to your account yet.
         </div>
       )}
 
-      {child && records.length === 0 && (
+      {loading && <p className="text-sm text-gray-400">Loading…</p>}
+
+      {!loading && activeChild && records.length === 0 && (
         <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 text-sm text-indigo-800">
           No attendance records yet.
         </div>
       )}
 
-      {records.length > 0 && (
+      {!loading && records.length > 0 && (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
@@ -93,7 +89,7 @@ export default function ParentAttendancePage() {
           {absent >= 2 && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800 flex items-start gap-2">
               <CalendarCheck size={16} className="mt-0.5 shrink-0" />
-              <span>{child.full_name} has been absent {absent} times. If you have concerns, please contact the school.</span>
+              <span>{activeChild!.full_name} has been absent {absent} times. If you have concerns, please contact the school.</span>
             </div>
           )}
 

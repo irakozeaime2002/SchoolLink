@@ -2,6 +2,16 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppLayout from './components/layout/AppLayout'
 import { AuthProvider } from './context/AuthContext'
+import { ChildProvider } from './context/ChildContext'
+import { SupervisorProvider } from './context/SupervisorContext'
+import SupervisorLoginPage from './pages/supervisor/SupervisorLoginPage'
+import SupervisorDashboard from './pages/supervisor/SupervisorDashboard'
+import SupervisorLayout from './components/layout/SupervisorLayout'
+import SupervisorOverviewPage from './pages/supervisor/SupervisorOverviewPage'
+import SupervisorLessonPlansPage from './pages/supervisor/SupervisorLessonPlansPage'
+import SupervisorTeachersPage from './pages/supervisor/SupervisorTeachersPage'
+import SupervisorClassesPage from './pages/supervisor/SupervisorClassesPage'
+import SupervisorsPage from './pages/headteacher/SupervisorsPage'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import WelcomePage from './pages/auth/WelcomePage'
@@ -31,14 +41,19 @@ import TeacherClassAnalyticsPage from './pages/teacher/TeacherClassAnalyticsPage
 import TeacherDashboard from './pages/teacher/TeacherDashboard'
 import TeacherAssessmentsPage from './pages/teacher/AssessmentsPage'
 import TeacherReportsPage from './pages/teacher/ReportsPage'
+import AllMarksPage from './pages/teacher/AllMarksPage'
 import TeacherStudentDetailPage from './pages/teacher/TeacherStudentDetailPage'
 import TeacherStudentsPage from './pages/teacher/TeacherStudentsPage'
+import LessonPlansPage from './pages/teacher/LessonPlansPage'
+import HeadteacherLessonPlansPage from './pages/headteacher/HeadteacherLessonPlansPage'
 import ProfilePage from './pages/shared/ProfilePage'
 
 export default function App() {
   return (
     <BrowserRouter>
+      <SupervisorProvider>
       <AuthProvider>
+        <ChildProvider>
         <Routes>
           <Route path="/" element={<WelcomePage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -71,6 +86,8 @@ export default function App() {
               <Route path="/headteacher/subjects" element={<SubjectsPage />} />
               <Route path="/headteacher/subjects/:id" element={<SubjectDetailPage />} />
               <Route path="/headteacher/settings" element={<SchoolSettingsPage />} />
+              <Route path="/headteacher/lesson-plans" element={<HeadteacherLessonPlansPage />} />
+              <Route path="/headteacher/supervisors" element={<SupervisorsPage />} />
             </Route>
           </Route>
 
@@ -84,7 +101,8 @@ export default function App() {
                 element={<TeacherClassAnalyticsPage />}
               />
               <Route path="/teacher/students" element={<TeacherStudentsPage />} />
-              <Route path="/teacher/marks" element={<MarksPage />} />
+              <Route path="/teacher/marks" element={<AllMarksPage />} />
+              <Route path="/teacher/marks/enter" element={<MarksPage />} />
               <Route path="/teacher/attendance" element={<AttendancePage />} />
               <Route path="/teacher/students/:id" element={<TeacherStudentDetailPage />} />
               <Route path="/teacher/messages" element={<MessagesPage />} />
@@ -92,6 +110,7 @@ export default function App() {
               <Route path="/teacher/assessments" element={<TeacherAssessmentsPage />} />
               <Route path="/teacher/homework" element={<Navigate to="/teacher/assessments" replace />} />
               <Route path="/teacher/reports" element={<TeacherReportsPage />} />
+              <Route path="/teacher/lesson-plans" element={<LessonPlansPage />} />
             </Route>
           </Route>
 
@@ -110,9 +129,20 @@ export default function App() {
             </Route>
           </Route>
 
+          {/* Supervisor - completely outside auth */}
+          <Route path="/supervisor/login" element={<SupervisorLoginPage />} />
+          <Route element={<SupervisorLayout />}>
+            <Route path="/supervisor" element={<SupervisorOverviewPage />} />
+            <Route path="/supervisor/lesson-plans" element={<SupervisorLessonPlansPage />} />
+            <Route path="/supervisor/teachers" element={<SupervisorTeachersPage />} />
+            <Route path="/supervisor/classes" element={<SupervisorClassesPage />} />
+          </Route>
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </ChildProvider>
       </AuthProvider>
+      </SupervisorProvider>
     </BrowserRouter>
   )
 }

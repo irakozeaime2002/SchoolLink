@@ -216,6 +216,13 @@ alter table public.parent_students enable row level security;
 create policy "parent_students: own read"
   on public.parent_students for select using (parent_id = auth.uid());
 
+create policy "parent_students: school staff read"
+  on public.parent_students for select
+  using (student_id in (
+    select id from public.students
+    where school_id in (select school_id from public.profiles where id = auth.uid())
+  ));
+
 create policy "parent_students: headteacher manage"
   on public.parent_students for all
   using (auth.uid() in (
@@ -399,6 +406,7 @@ create table public.messages (
   sender_id    uuid not null references public.profiles(id),
   recipient_id uuid not null references public.profiles(id),
   body         text not null,
+  channel      text not null default 'platform' check (channel in ('platform','sms')),
   read         boolean default false,
   created_at   timestamptz default now()
 );

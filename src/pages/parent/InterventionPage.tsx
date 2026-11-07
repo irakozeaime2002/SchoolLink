@@ -1,6 +1,6 @@
 import { BookOpen, CalendarClock, CheckCircle, TrendingUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useAuth } from '../../context/AuthContext'
+import { useChild } from '../../context/ChildContext'
 import { supabase } from '../../lib/supabase'
 
 interface Intervention {
@@ -28,71 +28,55 @@ const statusLabels: Record<Intervention['status'], string> = {
 }
 
 export default function ParentInterventionPage() {
-  const { user } = useAuth()
-  const userId = user?.id
-  const [child, setChild] = useState<any>(null)
+  const { activeChild, children, setActiveChild, loading: childLoading } = useChild()
   const [interventions, setInterventions] = useState<Intervention[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!userId) {
-      setLoading(false)
-      return
-    }
+    if (!activeChild) return
+    setLoading(true)
+    supabase.from('interventions').select('*')
+      .eq('student_id', activeChild.student_id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => { setInterventions((data ?? []) as Intervention[]); setLoading(false) })
+  }, [activeChild])
 
-    async function load() {
-      const { data: link } = await supabase
-        .from('parent_students')
-        .select('student_id')
-        .eq('parent_id', userId)
-        .limit(1)
-        .single()
-
-      if (!link) {
-        setLoading(false)
-        return
-      }
-
-      const { data: studentData } = await supabase
-        .from('students')
-        .select('id, full_name, classes(name)')
-        .eq('id', link.student_id)
-        .single()
-      setChild(studentData)
-
-      const { data } = await supabase
-        .from('interventions')
-        .select('*')
-        .eq('student_id', link.student_id)
-        .order('created_at', { ascending: false })
-
-      setInterventions((data ?? []) as Intervention[])
-      setLoading(false)
-    }
-
-    load()
-  }, [userId])
-
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading…</div>
+  if (childLoading) return <div className="text-center py-20 text-gray-400">Loading…</div>
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Support & Interventions</h1>
-        <p className="text-gray-500 text-sm mt-1">
-          {child ? `${child.full_name} · ${child.classes?.name ?? 'Class'}` : 'Your child’s support plan'}
-        </p>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Support & Interventions</h1>
+          <p className="text-gray-500 text-sm mt-1">
+            {activeChild ? `${activeChild.full_name} · ${activeChild.class_name}` : "Your child's support plan"}
+          </p>
+        </div>
+        {children.length > 1 && (
+          <div className="flex gap-2 flex-wrap">
+            {children.map(c => (
+              <button key={c.student_id} onClick={() => setActiveChild(c)}
+                className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+                  activeChild?.student_id === c.student_id
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                }`}>
+                {c.full_name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {!child && (
+      {!activeChild && (
         <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 text-sm text-indigo-800">
           No child is linked to your account yet.
         </div>
       )}
 
-      {child && interventions.length === 0 && (
+      {!loading && activeChild && interventions.length === 0 && (
         <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 text-sm text-indigo-800">
-          No support plans have been created for {child.full_name} yet.
+          No support plans have been created for {activeChild.full_name} yet.
         </div>
       )}
 

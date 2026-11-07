@@ -628,29 +628,29 @@ export default function TeacherStudentDetailPage() {
         </label>
       </section>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard
           label="Subjects you teach"
           value={subjects.length}
-          icon={<GraduationCap size={20} />}
+          icon={<GraduationCap size={18} />}
           color="bg-indigo-50 text-indigo-600"
         />
         <StatCard
           label="Student average"
           value={studentAverage === null ? '—' : `${studentAverage}%`}
-          icon={<ClipboardList size={20} />}
+          icon={<ClipboardList size={18} />}
           color="bg-emerald-50 text-emerald-600"
         />
         <StatCard
           label="Attendance rate"
           value={attendanceSummary.rate === null ? '—' : `${attendanceSummary.rate}%`}
-          icon={<CalendarCheck size={20} />}
+          icon={<CalendarCheck size={18} />}
           color="bg-amber-50 text-amber-600"
         />
         <StatCard
           label="Assessments"
           value={selectedAssessments.length}
-          icon={<ClipboardList size={20} />}
+          icon={<ClipboardList size={18} />}
           color="bg-sky-50 text-sky-600"
         />
       </div>

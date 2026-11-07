@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import Badge from '../../components/ui/Badge'
-import { useAuth } from '../../context/AuthContext'
+import { useChild } from '../../context/ChildContext'
 import { supabase } from '../../lib/supabase'
 
 function scoreVariant(score: number): 'green' | 'yellow' | 'red' {
@@ -9,41 +9,19 @@ function scoreVariant(score: number): 'green' | 'yellow' | 'red' {
 }
 
 export default function ParentProgressPage() {
-  const { user } = useAuth()
-  const [child, setChild] = useState<any>(null)
+  const { activeChild, children, setActiveChild, loading: childLoading } = useChild()
   const [subjects, setSubjects] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!user?.id) return
+    if (!activeChild) return
+    setSubjects([])
+    setLoading(true)
     async function load() {
-      const { data: link } = await supabase
-        .from('parent_students')
-        .select('student_id')
-        .eq('parent_id', user!.id)
-        .limit(1)
-        .single()
-
-      if (!link) { setLoading(false); return }
-
-      const { data: studentData } = await supabase
-        .from('students')
-        .select('full_name, classes(name)')
-        .eq('id', link.student_id)
-        .single()
-      setChild(studentData)
-
-      const { data: marksData } = await supabase
-        .from('marks')
-        .select('score, assessment_id')
-        .eq('student_id', link.student_id)
-
+      const { data: marksData } = await supabase.from('marks').select('score, assessment_id').eq('student_id', activeChild!.student_id)
       if (marksData && marksData.length > 0) {
         const aIds = marksData.map((m: any) => m.assessment_id)
-        const { data: assessments } = await supabase
-          .from('assessments')
-          .select('id, title, max_score, subjects(name)')
-          .in('id', aIds)
+        const { data: assessments } = await supabase.from('assessments').select('id, title, max_score, subjects(name)').in('id', aIds)
         const aMap = Object.fromEntries((assessments ?? []).map((a: any) => [a.id, a]))
         const bySubject: Record<string, { assessments: any[]; total: number; count: number }> = {}
         marksData.forEach((m: any) => {
@@ -56,27 +34,43 @@ export default function ParentProgressPage() {
           bySubject[name].total += pct
           bySubject[name].count += 1
         })
-        setSubjects(Object.entries(bySubject).map(([name, v]) => ({
-          name,
-          average: Math.round(v.total / v.count),
-          assessments: v.assessments,
-        })))
+        setSubjects(Object.entries(bySubject).map(([name, v]) => ({ name, average: Math.round(v.total / v.count), assessments: v.assessments })))
+      } else {
+        setSubjects([])
       }
       setLoading(false)
     }
     load()
-  }, [user])
+  }, [activeChild])
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading…</div>
+  if (childLoading) return <div className="text-center py-20 text-gray-400">Loading…</div>
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">{child ? `${child.full_name}'s Progress` : 'Progress'}</h1>
-        <p className="text-gray-500 text-sm mt-1">{child?.classes?.name ?? '—'}</p>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{activeChild ? `${activeChild.full_name}'s Progress` : 'Progress'}</h1>
+          <p className="text-gray-500 text-sm mt-1">{activeChild?.class_name ?? '—'}</p>
+        </div>
+        {children.length > 1 && (
+          <div className="flex gap-2 flex-wrap">
+            {children.map(c => (
+              <button key={c.student_id} onClick={() => setActiveChild(c)}
+                className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+                  activeChild?.student_id === c.student_id
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                }`}>
+                {c.full_name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {subjects.length === 0 && (
+      {loading && <p className="text-sm text-gray-400">Loading…</p>}
+
+      {!loading && subjects.length === 0 && (
         <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 text-sm text-indigo-800">
           No marks have been recorded yet.
         </div>

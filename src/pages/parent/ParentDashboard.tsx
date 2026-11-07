@@ -1,18 +1,10 @@
-import { CalendarCheck, ChevronDown, KeyRound, MessageSquare, TrendingUp, UserCheck } from 'lucide-react'
+import { CalendarCheck, KeyRound, MessageSquare, TrendingUp, UserCheck } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import Badge from '../../components/ui/Badge'
 import StatCard from '../../components/ui/StatCard'
 import { useAuth } from '../../context/AuthContext'
+import { useChild } from '../../context/ChildContext'
 import { supabase } from '../../lib/supabase'
-
-interface Child {
-  student_id: string
-  full_name: string
-  class_name: string
-  school_name: string
-  school_id: string
-  status: string
-}
 
 interface AttendanceCounts {
   present: number
@@ -33,15 +25,13 @@ const ATTENDANCE_TILES: { key: keyof Omit<AttendanceCounts, 'total'>; label: str
 
 export default function ParentDashboard() {
   const { user, mustChangePassword, setMustChangePassword } = useAuth()
-  const [children, setChildren] = useState<Child[]>([])
-  const [activeChild, setActiveChild] = useState<Child | null>(null)
+  const { children, activeChild, setActiveChild } = useChild()
   const [subjects, setSubjects] = useState<{ name: string; score: number }[]>([])
   const [attendanceRate, setAttendanceRate] = useState<number | null>(null)
   const [attendance, setAttendance] = useState<AttendanceCounts>(EMPTY_ATTENDANCE)
   const [unreadMessages, setUnreadMessages] = useState(0)
   const [announcements, setAnnouncements] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showDropdown, setShowDropdown] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   // Password change state
   const [newPassword, setNewPassword] = useState('')
@@ -50,39 +40,9 @@ export default function ParentDashboard() {
   const [pwLoading, setPwLoading] = useState(false)
 
   useEffect(() => {
-    if (!user?.id) return
-    async function loadChildren() {
-      const { data: links } = await supabase
-        .from('parent_students')
-        .select('student_id')
-        .eq('parent_id', user!.id)
-
-      const studentIds = (links ?? []).map((r: any) => r.student_id)
-      if (studentIds.length === 0) { setLoading(false); return }
-
-      const { data: studentRows } = await supabase
-        .from('students')
-        .select('id, full_name, status, class_id, school_id, classes(name), schools(name)')
-        .in('id', studentIds)
-
-      const list: Child[] = (studentRows ?? []).map((s: any) => ({
-        student_id: s.id,
-        full_name: s.full_name ?? '—',
-        class_name: (s.classes as any)?.name ?? '—',
-        school_name: (s.schools as any)?.name ?? '—',
-        school_id: s.school_id ?? '',
-        status: s.status ?? '—',
-      }))
-      setChildren(list)
-      if (list.length > 0) setActiveChild(list[0])
-      setLoading(false)
-    }
-    loadChildren()
-  }, [user])
-
-  useEffect(() => {
     if (!activeChild) return
     async function loadChildData() {
+      setLoading(true)
       setSubjects([])
       setAttendanceRate(null)
       setAttendance(EMPTY_ATTENDANCE)
@@ -136,6 +96,7 @@ export default function ParentDashboard() {
         .order('created_at', { ascending: false })
         .limit(3)
       setAnnouncements(ann ?? [])
+      setLoading(false)
     }
     loadChildData()
   }, [activeChild])
@@ -209,27 +170,20 @@ export default function ParentDashboard() {
 
         {/* Child switcher */}
         {children.length > 1 && (
-          <div className="relative">
-            <button
-              onClick={() => setShowDropdown(d => !d)}
-              className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 hover:border-indigo-300 transition-colors bg-white"
-            >
-              Switch Child <ChevronDown size={14} />
-            </button>
-            {showDropdown && (
-              <div className="absolute right-0 mt-1 w-56 bg-white border border-gray-100 rounded-xl shadow-lg z-10 overflow-hidden">
-                {children.map(c => (
-                  <button
-                    key={c.student_id}
-                    onClick={() => { setActiveChild(c); setShowDropdown(false) }}
-                    className={`w-full text-left px-4 py-3 text-sm hover:bg-indigo-50 transition-colors border-b border-gray-50 last:border-0 ${activeChild?.student_id === c.student_id ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700'}`}
-                  >
-                    <p className="font-medium">{c.full_name}</p>
-                    <p className="text-xs text-gray-400">{c.class_name} · {c.school_name}</p>
-                  </button>
-                ))}
-              </div>
-            )}
+          <div className="flex gap-2 flex-wrap">
+            {children.map(c => (
+              <button
+                key={c.student_id}
+                onClick={() => setActiveChild(c)}
+                className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+                  activeChild?.student_id === c.student_id
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                }`}
+              >
+                {c.full_name}
+              </button>
+            ))}
           </div>
         )}
       </div>

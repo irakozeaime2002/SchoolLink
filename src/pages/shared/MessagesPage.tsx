@@ -95,38 +95,49 @@ export default function MessagesPage() {
   async function loadComposeData() {
     if (!user?.school_id) return
 
-    // Load classes
-    const { data: cls } = await supabase
-      .from('classes')
-      .select('id, name')
-      .eq('school_id', user.school_id)
-      .order('name')
-    setClasses(cls ?? [])
+    // Load classes: for teachers only their assigned classes, for headteacher all school classes
+    let classIds: string[] = []
+    if (user.role === 'teacher') {
+      const [own, taught] = await Promise.all([
+        supabase.from('classes').select('id, name').eq('teacher_id', user.id),
+        supabase.from('class_subjects').select('classes(id, name)').eq('teacher_id', user.id),
+      ])
+      const byId = new Map<string, SchoolClass>()
+      ;(own.data ?? []).forEach((c: any) => byId.set(c.id, { id: c.id, name: c.name }))
+      ;(taught.data ?? []).forEach((row: any) => {
+        const c = row.classes
+        if (c && !byId.has(c.id)) byId.set(c.id, { id: c.id, name: c.name })
+      })
+      const list = Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name))
+      setClasses(list)
+      classIds = list.map((c) => c.id)
+    } else {
+      const { data: cls } = await supabase
+        .from('classes').select('id, name').eq('school_id', user.school_id).order('name')
+      setClasses(cls ?? [])
+      classIds = (cls ?? []).map((c: any) => c.id)
+    }
 
-    // Step 1: get all student IDs in this school
+    if (classIds.length === 0) return
+
+    // Load all parents of students in those classes (for By Parent tab)
     const { data: students } = await supabase
-      .from('students')
-      .select('id')
-      .eq('school_id', user.school_id)
+      .from('students').select('id').in('class_id', classIds)
     const studentIds = (students ?? []).map((s: any) => s.id)
     if (studentIds.length === 0) return
 
-    // Step 2: get parent_students for those students
     const { data: ps } = await supabase
       .from('parent_students')
-      .select('parent_id, profiles!parent_students_parent_id_fkey(id, full_name, phone)')
+      .select('parent_id')
       .in('student_id', studentIds)
+    const parentIds = [...new Set((ps ?? []).map((r: any) => r.parent_id))]
+    if (parentIds.length === 0) return
 
-    const seen = new Set<string>()
-    const result: Parent[] = []
-    for (const row of ps ?? []) {
-      const p = (row as any).profiles
-      if (p && !seen.has(p.id)) {
-        seen.add(p.id)
-        result.push({ id: p.id, full_name: p.full_name, phone: p.phone })
-      }
-    }
-    setParents(result.sort((a, b) => a.full_name.localeCompare(b.full_name)))
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, phone')
+      .in('id', parentIds)
+    setParents((profiles ?? []).sort((a: any, b: any) => a.full_name.localeCompare(b.full_name)))
   }
 
   async function loadClassParents(classId: string) {
@@ -141,21 +152,19 @@ export default function MessagesPage() {
     if (studentIds.length === 0) { setClassParents([]); setSelectedParents([]); return }
 
     // Step 2: get parents for those students
-    const { data } = await supabase
+    const { data: ps2 } = await supabase
       .from('parent_students')
-      .select('parent_id, profiles!parent_students_parent_id_fkey(id, full_name, phone)')
+      .select('parent_id')
       .in('student_id', studentIds)
+    const parentIds = [...new Set((ps2 ?? []).map((r: any) => r.parent_id))]
+    if (parentIds.length === 0) { setClassParents([]); setSelectedParents([]); return }
 
-    const seen = new Set<string>()
-    const result: Parent[] = []
-    for (const row of data ?? []) {
-      const p = (row as any).profiles
-      if (p && !seen.has(p.id)) {
-        seen.add(p.id)
-        result.push({ id: p.id, full_name: p.full_name, phone: p.phone })
-      }
-    }
-    setClassParents(result.sort((a, b) => a.full_name.localeCompare(b.full_name)))
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, phone')
+      .in('id', parentIds)
+    const result = (profiles ?? []).sort((a: any, b: any) => a.full_name.localeCompare(b.full_name))
+    setClassParents(result)
     setSelectedParents(result)
   }
 

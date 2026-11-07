@@ -1,4 +1,4 @@
-import { Plus, Save } from 'lucide-react'
+import { ArrowLeft, Plus, Save } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
@@ -101,13 +101,18 @@ export default function MarksPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Enter Marks</h1>
-          <p className="text-gray-500 text-sm mt-1">
+        <div className="flex items-center gap-3">
+          <Link to="/teacher/marks" className="text-gray-400 hover:text-gray-600 transition-colors">
+            <ArrowLeft size={20} />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Enter Marks</h1>
+            <p className="text-gray-500 text-sm mt-1">
             {assessment
               ? `${assessment.title}${assessment.subjectName ? ` · ${assessment.subjectName}` : ''} · ${formatAssessmentDate(assessment.date)} · Max: ${assessment.max_score}`
               : 'Select a class and assessment'}
           </p>
+          </div>
         </div>
         <button onClick={handleSave} disabled={saving || !selectedAssessment}
           className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-50">

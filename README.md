@@ -4,7 +4,7 @@
 |---|---|---|
 | Headteacher | irakoze@gmail.com | 123456 |
 | Teacher | john1@gmail.com | 123456 |
-| Parent | parent@gmail.com | Parent1 |
+| Parent | beata@gmail.com | 112233 |
 | Admin | admin@gmail.com | Admin@1 |
 
 **Deployed site:** [schoolmerge.vercel.app](https://schoolmerge.vercel.app)
